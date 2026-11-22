@@ -79,8 +79,10 @@ export function stripLocalePrefix(pathname: string): AppSubPath {
       ? segments.slice(1)
       : segments;
   const normalized = `/${rest.join('/')}`.replace(/\/+$/, '').toLowerCase() || '/';
-  if (normalized === '/administration') return '/administration';
-  if (normalized === '/espace-client') return '/espace-client';
+  // Canonical public URLs are /administrateur and /utilisateur (no locale prefix);
+  // the legacy /administration and /espace-client paths are still accepted.
+  if (normalized === '/administrateur' || normalized === '/administration') return '/administration';
+  if (normalized === '/utilisateur' || normalized === '/espace-client') return '/espace-client';
   return '/';
 }
 
@@ -89,8 +91,8 @@ export function isAdminSubPath(pathname: string): boolean {
 }
 
 export function buildLocalizedPath(locale: LocaleCode, subPath: AppSubPath): string {
-  if (subPath === '/administration') return `/${locale}/administration`;
-  if (subPath === '/espace-client') return `/${locale}/espace-client`;
+  if (subPath === '/administration') return '/administrateur';
+  if (subPath === '/espace-client') return '/utilisateur';
   return `/${locale}`;
 }
 

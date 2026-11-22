@@ -134,7 +134,7 @@ export function AdminStaffPanel() {
       setRole('operator');
       setShowCreateForm(false);
       setFeedback(
-        `Utilisateur « ${cleanName} » (${cleanEmail}) ajouté. Il peut désormais se connecter sur /administration.`
+        `Utilisateur « ${cleanName} » (${cleanEmail}) ajouté. Il peut désormais se connecter sur /administrateur.`
       );
     } catch (error) {
       handleFirestoreError(error, OperationType.CREATE, path);
@@ -224,7 +224,7 @@ export function AdminStaffPanel() {
             Utilisateurs pour la gestion des données
           </h3>
           <p className="mt-1 text-xs text-slate-600 max-w-2xl">
-            Créez des comptes opérateurs ou administrateurs. Pour accéder à /administration, chaque
+            Créez des comptes opérateurs ou administrateurs. Pour accéder à /administrateur, chaque
             utilisateur s’authentifie directement via Firebase Auth avec son compte Google vérifié et
             autorisé ci-dessous.
           </p>

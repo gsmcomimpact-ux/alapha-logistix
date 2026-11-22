@@ -1,6 +1,8 @@
 User-agent: *
 Allow: /
-Disallow: /fr/administration
-Disallow: /en/administration
+Disallow: /administrateur
+Disallow: /utilisateur
+Disallow: /administration
+Disallow: /espace-client
 
 Sitemap: https://alphalogistixgroup.com/sitemap.xml

@@ -61,15 +61,16 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   // Normalize unprefixed URLs ('/' or '/administration') to canonical SEO localized URLs on mount
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    const urlLocale = extractLocaleFromPath(window.location.pathname);
     const currentSub = stripLocalePrefix(window.location.pathname);
     setSubPath(currentSub);
 
-    if (!urlLocale) {
-      const targetUrl =
-        buildLocalizedPath(locale, currentSub) +
-        window.location.search +
-        window.location.hash;
+    const targetUrl =
+      buildLocalizedPath(locale, currentSub) +
+      window.location.search +
+      window.location.hash;
+    const currentUrl = window.location.pathname + window.location.search + window.location.hash;
+    // Normalize to canonical URLs: '/' -> '/fr', '/administration' -> '/administrateur', etc.
+    if (targetUrl !== currentUrl) {
       window.history.replaceState({}, '', targetUrl);
     }
   }, []);

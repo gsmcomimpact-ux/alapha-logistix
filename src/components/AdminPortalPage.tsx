@@ -1,7 +1,9 @@
+import { FormEvent, useState } from 'react';
 import { ArrowLeft, Lock, LogOut, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { BOOTSTRAPPED_ADMIN_EMAIL } from '../lib/firebase';
+import { ChangePasswordForm } from './ChangePasswordForm';
 import { AdminTrackingWorkspace } from './AdminTrackingWorkspace';
 import { LanguageSwitcher } from './LanguageSwitcher';
 
@@ -16,9 +18,29 @@ export function AdminPortalPage() {
     authError,
     clearAuthError,
     signInWithGoogle,
+    signInWithEmail,
     signOutUser,
   } = useAuth();
-  const { t, navigateTo } = useLanguage();
+  const { locale, t, navigateTo } = useLanguage();
+  const en = locale === 'en';
+  const [password, setPassword] = useState('');
+  const [otherEmail, setOtherEmail] = useState('');
+  const [useOtherAccount, setUseOtherAccount] = useState(false);
+  const [signingIn, setSigningIn] = useState(false);
+
+  // Password-only sign-in: the main administrator account is implied.
+  // Other staff members can reveal an e-mail field.
+  const handlePasswordSignIn = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!password) return;
+    setSigningIn(true);
+    await signInWithEmail(
+      useOtherAccount && otherEmail.trim() ? otherEmail : BOOTSTRAPPED_ADMIN_EMAIL,
+      password
+    );
+    setSigningIn(false);
+    setPassword('');
+  };
 
   const handleAdminLogout = async () => {
     try {
@@ -107,9 +129,11 @@ export function AdminPortalPage() {
                 {t.admin.dbVerifyTitle}
               </h1>
               <p className="mt-2 text-sm text-slate-600 leading-relaxed">
-                {t.admin.dbVerifyDescPrefix}
+                {en
+                  ? 'Enter the administrator password for '
+                  : 'Saisissez le mot de passe administrateur de '}
                 <span className="font-mono text-xs text-slate-900">{BOOTSTRAPPED_ADMIN_EMAIL}</span>
-                {t.admin.dbVerifyDescSuffix}
+                {en ? ', or use another staff account.' : ', ou utilisez un autre compte du personnel.'}
               </p>
 
               {authError && (
@@ -128,23 +152,72 @@ export function AdminPortalPage() {
                 </div>
               )}
 
-              <div className="mt-6 flex flex-wrap items-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => void signInWithGoogle()}
-                  className="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-orange-600 hover:bg-orange-700 rounded-lg transition-colors cursor-pointer min-h-[44px]"
-                >
-                  <ShieldCheck className="w-4 h-4" aria-hidden="true" />
-                  <span>{t.admin.validateSessionBtn}</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => navigateTo('/')}
-                  className="px-4 py-2.5 text-sm font-medium text-orange-700 bg-white border border-orange-300 hover:bg-orange-50 rounded-lg cursor-pointer min-h-[44px]"
-                >
-                  {t.common.cancel}
-                </button>
-              </div>
+              <form onSubmit={handlePasswordSignIn} className="mt-6 space-y-4" noValidate>
+                {useOtherAccount && (
+                  <div>
+                    <label htmlFor="admin-login-email" className="block text-sm font-medium text-slate-900 mb-1.5">
+                      {en ? 'Staff e-mail' : 'E-mail du personnel'}
+                    </label>
+                    <input
+                      id="admin-login-email"
+                      type="email"
+                      autoComplete="username"
+                      value={otherEmail}
+                      onChange={(e) => setOtherEmail(e.target.value)}
+                      className="w-full min-h-[44px] px-3.5 py-2 text-sm text-slate-900 bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-sky-600 focus:ring-2 focus:ring-sky-600/20"
+                    />
+                  </div>
+                )}
+                <div>
+                  <label htmlFor="admin-login-password" className="block text-sm font-medium text-slate-900 mb-1.5">
+                    {en ? 'Password' : 'Mot de passe'}
+                  </label>
+                  <input
+                    id="admin-login-password"
+                    type="password"
+                    autoComplete="current-password"
+                    autoFocus
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full min-h-[44px] px-3.5 py-2 text-sm text-slate-900 bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-sky-600 focus:ring-2 focus:ring-sky-600/20"
+                  />
+                </div>
+                <div className="flex flex-wrap items-center gap-3">
+                  <button
+                    type="submit"
+                    disabled={signingIn || !password}
+                    className="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-orange-600 hover:bg-orange-700 disabled:opacity-60 rounded-lg transition-colors cursor-pointer min-h-[44px]"
+                  >
+                    <ShieldCheck className="w-4 h-4" aria-hidden="true" />
+                    <span>{signingIn ? (en ? 'Signing in…' : 'Connexion…') : en ? 'Sign in' : 'Se connecter'}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => navigateTo('/')}
+                    className="px-4 py-2.5 text-sm font-medium text-orange-700 bg-white border border-orange-300 hover:bg-orange-50 rounded-lg cursor-pointer min-h-[44px]"
+                  >
+                    {t.common.cancel}
+                  </button>
+                </div>
+                <div className="flex flex-col items-start gap-1.5 text-xs">
+                  <button
+                    type="button"
+                    onClick={() => setUseOtherAccount((v) => !v)}
+                    className="text-sky-700 underline underline-offset-4 cursor-pointer"
+                  >
+                    {useOtherAccount
+                      ? en ? 'Use the main administrator account' : 'Utiliser le compte administrateur principal'
+                      : en ? 'Other staff account' : 'Autre compte du personnel'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void signInWithGoogle()}
+                    className="text-slate-600 underline underline-offset-4 cursor-pointer"
+                  >
+                    {en ? 'First sign-in or no password yet? Continue with Google' : 'Première connexion ou pas encore de mot de passe ? Continuer avec Google'}
+                  </button>
+                </div>
+              </form>
             </div>
           ) : !user.emailVerified ? (
             <div className="max-w-lg mx-auto bg-white border border-slate-200 rounded-xl p-8 shadow-sm">
@@ -201,6 +274,7 @@ export function AdminPortalPage() {
                   {t.admin.workspaceTitle}
                 </h1>
               </div>
+              <ChangePasswordForm />
               <AdminTrackingWorkspace />
             </div>
           ) : null}

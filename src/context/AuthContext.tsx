@@ -1,6 +1,11 @@
 import { createContext, ReactNode, useContext, useEffect, useState } from 'react';
 import {
   createUserWithEmailAndPassword,
+  EmailAuthProvider,
+  linkWithCredential,
+  reauthenticateWithCredential,
+  reauthenticateWithPopup,
+  updatePassword,
   onAuthStateChanged,
   sendEmailVerification,
   sendPasswordResetEmail,
@@ -65,6 +70,8 @@ interface AuthContextValue {
   resetClientPassword: (email: string) => Promise<AuthActionResult>;
   signOutUser: () => Promise<void>;
   saveClientProfile: (input: ProfileInput) => Promise<void>;
+  hasPasswordLogin: boolean;
+  changePassword: (currentPassword: string, newPassword: string) => Promise<AuthActionResult>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -100,6 +107,15 @@ function mapFirebaseAuthError(code: string | undefined, locale: 'fr' | 'en'): st
       return isEn
         ? 'Email/Password sign-in is not yet enabled in Firebase Console (Authentication > Sign-in method).'
         : 'La connexion par E-mail / Mot de passe doit être activée dans Firebase Console (Authentication > Sign-in method).';
+    case 'auth/requires-recent-login':
+      return isEn
+        ? 'For security, please sign in again and retry.'
+        : 'Pour des raisons de sécurité, veuillez vous reconnecter puis réessayer.';
+    case 'auth/credential-already-in-use':
+    case 'auth/provider-already-linked':
+      return isEn
+        ? 'A password is already set for this account. Use your current password.'
+        : 'Un mot de passe existe déjà pour ce compte. Utilisez votre mot de passe actuel.';
     case 'auth/network-request-failed':
       return isEn
         ? 'Network error. Please check your internet connection.'
@@ -123,6 +139,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [canManageUsers, setCanManageUsers] = useState(false);
   const [staffRole, setStaffRole] = useState<StaffRole | null>(null);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [, forceRender] = useState(0);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (nextUser) => {
@@ -345,6 +362,53 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const hasPasswordLogin = Boolean(
+    user?.providerData.some((p) => p.providerId === 'password')
+  );
+
+  /**
+   * Changes the signed-in user's password.
+   * - Account already has a password: re-authenticate with the current one, then update it.
+   * - Google-only account (no password yet): re-authenticate with Google, then attach the
+   *   password so the account can sign in with it (currentPassword is ignored).
+   */
+  const changePassword = async (
+    currentPassword: string,
+    newPassword: string
+  ): Promise<AuthActionResult> => {
+    if (!user || !user.email) {
+      return { ok: false, error: locale === 'en' ? 'Not signed in.' : 'Utilisateur non authentifié.' };
+    }
+    if (newPassword.length < 8) {
+      return {
+        ok: false,
+        error:
+          locale === 'en'
+            ? 'The new password must contain at least 8 characters.'
+            : 'Le nouveau mot de passe doit contenir au moins 8 caractères.',
+      };
+    }
+    try {
+      if (hasPasswordLogin) {
+        await reauthenticateWithCredential(
+          user,
+          EmailAuthProvider.credential(user.email, currentPassword)
+        );
+        await updatePassword(user, newPassword);
+      } else {
+        await reauthenticateWithPopup(user, googleProvider);
+        await linkWithCredential(user, EmailAuthProvider.credential(user.email, newPassword));
+        // Refresh local state so hasPasswordLogin becomes true.
+        await user.reload();
+        forceRender((n) => n + 1);
+      }
+      return { ok: true };
+    } catch (error) {
+      const code = (error as { code?: string })?.code;
+      return { ok: false, error: mapFirebaseAuthError(code, locale) };
+    }
+  };
+
   const signOutUser = async () => {
     setAuthError(null);
     await signOut(auth);
@@ -415,6 +479,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         resetClientPassword,
         signOutUser,
         saveClientProfile,
+        hasPasswordLogin,
+        changePassword,
       }}
     >
       {children}
