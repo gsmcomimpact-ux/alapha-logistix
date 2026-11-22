@@ -55,6 +55,15 @@ export function Footer() {
                 className="hover:text-white transition-colors"
               >
                 commercial@alphalogistixgroup.com
+              </a>{' '}
+              ·{' '}
+              <a
+                href="https://www.google.com/maps/search/?api=1&query=Niamey%2C+Niger"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-white transition-colors"
+              >
+                Google Maps
               </a>
             </p>
           </div>

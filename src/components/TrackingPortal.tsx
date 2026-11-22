@@ -2,6 +2,7 @@ import { ArrowRight, LogIn, LogOut, Phone, UserCheck } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { buildLocalizedPath } from '../i18n';
+import { PublicTrackingLookup } from './PublicTrackingLookup';
 
 export function TrackingPortal() {
   const { user, authReady, signOutUser } = useAuth();
@@ -41,6 +42,8 @@ export function TrackingPortal() {
             </div>
           )}
         </div>
+
+        <PublicTrackingLookup />
 
         {/* Dedicated Single-Page Gateway Card */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">

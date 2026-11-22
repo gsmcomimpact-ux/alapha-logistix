@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /fr/administration
+Disallow: /en/administration
+
+Sitemap: https://www.alphalogistixgroup.com/sitemap.xml

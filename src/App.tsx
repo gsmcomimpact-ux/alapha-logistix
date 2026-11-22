@@ -12,6 +12,7 @@ import { ContactSection } from './components/ContactSection';
 import { Footer } from './components/Footer';
 import { AdminPortalPage } from './components/AdminPortalPage';
 import { ClientPortalPage } from './components/ClientPortalPage';
+import { WhatsAppButton } from './components/WhatsAppButton';
 import { QuotePrefill, ServiceCategory } from './types/logistics';
 
 function PublicWebsite() {
@@ -74,6 +75,7 @@ export default function App() {
       <LanguageProvider>
         <AuthProvider>
           <AppRouter />
+          <WhatsAppButton />
         </AuthProvider>
       </LanguageProvider>
     </ErrorBoundary>

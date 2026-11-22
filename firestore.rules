@@ -855,6 +855,35 @@ service cloud.firestore {
     }
 
     // -------------------------------------------------------------------------
+    // /publicTracking/{trackingCode} — Public, non-sensitive tracking mirror.
+    // Readable by anyone who knows the tracking code (get only, no listing).
+    // Written by staff only; contains no client identity data.
+    // -------------------------------------------------------------------------
+    match /publicTracking/{trackingCode} {
+      allow get: if trackingCode.matches('^[A-Z0-9-]{3,64}$');
+      allow list: if false;
+
+      allow create, update: if isAdmin()
+        && trackingCode.matches('^[A-Z0-9-]{3,64}$')
+        && incoming().keys().hasOnly([
+          'trackingCode', 'transportMode', 'origin', 'destination',
+          'currentLocation', 'currentStatus', 'estimatedArrival',
+          'positionSource', 'updatedAt'
+        ])
+        && incoming().trackingCode == trackingCode
+        && incoming().transportMode is string && incoming().transportMode.size() <= 60
+        && incoming().origin is string && incoming().origin.size() <= 120
+        && incoming().destination is string && incoming().destination.size() <= 120
+        && incoming().currentLocation is string && incoming().currentLocation.size() <= 150
+        && incoming().currentStatus is string && incoming().currentStatus.size() <= 60
+        && incoming().estimatedArrival is string && incoming().estimatedArrival.size() <= 40
+        && incoming().positionSource in ['confirmed', 'estimated', 'manual']
+        && incoming().updatedAt == request.time;
+
+      allow delete: if isAdmin();
+    }
+
+    // -------------------------------------------------------------------------
     // /notifications/{notifId} — Client Shipment & Document Notifications
     // -------------------------------------------------------------------------
     match /notifications/{notifId} {

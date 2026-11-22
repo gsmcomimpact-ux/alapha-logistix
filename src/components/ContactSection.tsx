@@ -17,6 +17,13 @@ interface FormState {
   email: string;
   phone: string;
   service: ServiceCategory;
+  originCountry: string;
+  destinationCountry: string;
+  cargoNature: string;
+  weightKg: string;
+  volumeM3: string;
+  packaging: string;
+  shipDate: string;
   message: string;
 }
 
@@ -31,8 +38,32 @@ const INITIAL_FORM: FormState = {
   email: '',
   phone: '',
   service: 'Fret maritime',
+  originCountry: '',
+  destinationCountry: '',
+  cargoNature: '',
+  weightKg: '',
+  volumeM3: '',
+  packaging: '',
+  shipDate: '',
   message: '',
 };
+
+function buildShipmentDetails(f: FormState, locale: string): string {
+  const en = locale === 'en';
+  const rows: Array<[string, string]> = [
+    [en ? 'From' : 'Départ', f.originCountry],
+    [en ? 'To' : 'Destination', f.destinationCountry],
+    [en ? 'Cargo' : 'Marchandise', f.cargoNature],
+    [en ? 'Weight (kg)' : 'Poids (kg)', f.weightKg],
+    [en ? 'Volume (m³)' : 'Volume (m³)', f.volumeM3],
+    [en ? 'Packaging' : 'Conditionnement', f.packaging],
+    [en ? 'Planned shipping date' : 'Date d’expédition prévue', f.shipDate],
+  ];
+  return rows
+    .filter(([, v]) => v.trim())
+    .map(([k, v]) => `${k} : ${v.trim()}`)
+    .join('\n');
+}
 
 export function ContactSection({ prefill, onClearPrefill }: ContactSectionProps) {
   const { user, userProfile } = useAuth();
@@ -102,7 +133,13 @@ export function ContactSection({ prefill, onClearPrefill }: ContactSectionProps)
     const cleanCompany = form.company.trim().slice(0, FIELD_LIMITS.companyMax);
     const cleanEmail = form.email.trim().toLowerCase().slice(0, FIELD_LIMITS.emailMax);
     const cleanPhone = form.phone.trim().slice(0, FIELD_LIMITS.phoneMax);
-    const cleanMessage = form.message.trim().slice(0, FIELD_LIMITS.quoteMessageMax);
+    const details = buildShipmentDetails(form, locale).slice(0, 500);
+    const cleanMessage = `${details}${details ? '\n\n' : ''}${form.message.trim()}`.slice(
+      0,
+      FIELD_LIMITS.quoteMessageMax
+    );
+    const cleanOriginCountry = form.originCountry.trim();
+    const cleanDestCountry = form.destinationCountry.trim();
 
     let savedQuoteCode: string | undefined;
 
@@ -120,8 +157,8 @@ export function ContactSection({ prefill, onClearPrefill }: ContactSectionProps)
           company: cleanCompany,
           phone: cleanPhone,
           transportMode: form.service,
-          origin: (prefill?.origin || '').slice(0, FIELD_LIMITS.originDestMax),
-          destination: (prefill?.destination || userProfile?.city || '').slice(
+          origin: (cleanOriginCountry || prefill?.origin || '').slice(0, FIELD_LIMITS.originDestMax),
+          destination: (cleanDestCountry || prefill?.destination || userProfile?.city || '').slice(
             0,
             FIELD_LIMITS.originDestMax
           ),
@@ -534,6 +571,107 @@ export function ContactSection({ prefill, onClearPrefill }: ContactSectionProps)
                       </option>
                     ))}
                   </select>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label htmlFor="contact-origin" className="block text-sm font-medium text-slate-900 mb-1.5">
+                      {(locale === 'en' ? 'Country of origin' : 'Pays de départ')}
+                    </label>
+                    <input
+                      id="contact-origin"
+                      type="text"
+                      maxLength={80}
+                      value={form.originCountry}
+                      onChange={(e) => setForm({ ...form, originCountry: e.target.value })}
+                      placeholder="Chine"
+                      className="w-full min-h-[44px] px-3.5 py-2 text-sm text-slate-900 placeholder:text-slate-400 bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-sky-600 focus:ring-2 focus:ring-sky-600/20"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="contact-destination" className="block text-sm font-medium text-slate-900 mb-1.5">
+                      {(locale === 'en' ? 'Destination country' : 'Pays de destination')}
+                    </label>
+                    <input
+                      id="contact-destination"
+                      type="text"
+                      maxLength={80}
+                      value={form.destinationCountry}
+                      onChange={(e) => setForm({ ...form, destinationCountry: e.target.value })}
+                      placeholder="Niger"
+                      className="w-full min-h-[44px] px-3.5 py-2 text-sm text-slate-900 placeholder:text-slate-400 bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-sky-600 focus:ring-2 focus:ring-sky-600/20"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="contact-cargo" className="block text-sm font-medium text-slate-900 mb-1.5">
+                      {(locale === 'en' ? 'Nature of goods' : 'Nature de la marchandise')}
+                    </label>
+                    <input
+                      id="contact-cargo"
+                      type="text"
+                      maxLength={80}
+                      value={form.cargoNature}
+                      onChange={(e) => setForm({ ...form, cargoNature: e.target.value })}
+                      placeholder="Matériel électrique"
+                      className="w-full min-h-[44px] px-3.5 py-2 text-sm text-slate-900 placeholder:text-slate-400 bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-sky-600 focus:ring-2 focus:ring-sky-600/20"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="contact-packaging" className="block text-sm font-medium text-slate-900 mb-1.5">
+                      {(locale === 'en' ? 'Packaging type' : 'Type de conditionnement')}
+                    </label>
+                    <input
+                      id="contact-packaging"
+                      type="text"
+                      maxLength={80}
+                      value={form.packaging}
+                      onChange={(e) => setForm({ ...form, packaging: e.target.value })}
+                      placeholder="Palettes, cartons, vrac..."
+                      className="w-full min-h-[44px] px-3.5 py-2 text-sm text-slate-900 placeholder:text-slate-400 bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-sky-600 focus:ring-2 focus:ring-sky-600/20"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="contact-weight" className="block text-sm font-medium text-slate-900 mb-1.5">
+                      {(locale === 'en' ? 'Weight (kg)' : 'Poids (kg)')}
+                    </label>
+                    <input
+                      id="contact-weight"
+                      type="number" min={0}
+                      maxLength={80}
+                      value={form.weightKg}
+                      onChange={(e) => setForm({ ...form, weightKg: e.target.value })}
+                      placeholder="850"
+                      className="w-full min-h-[44px] px-3.5 py-2 text-sm text-slate-900 placeholder:text-slate-400 bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-sky-600 focus:ring-2 focus:ring-sky-600/20"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="contact-volume" className="block text-sm font-medium text-slate-900 mb-1.5">
+                      {(locale === 'en' ? 'Volume (m³)' : 'Volume (m³)')}
+                    </label>
+                    <input
+                      id="contact-volume"
+                      type="number" min={0} step="any"
+                      maxLength={80}
+                      value={form.volumeM3}
+                      onChange={(e) => setForm({ ...form, volumeM3: e.target.value })}
+                      placeholder="4.5"
+                      className="w-full min-h-[44px] px-3.5 py-2 text-sm text-slate-900 placeholder:text-slate-400 bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-sky-600 focus:ring-2 focus:ring-sky-600/20"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="contact-shipdate" className="block text-sm font-medium text-slate-900 mb-1.5">
+                      {(locale === 'en' ? 'Planned shipping date' : 'Date d’expédition prévue')}
+                    </label>
+                    <input
+                      id="contact-shipdate"
+                      type="date"
+                      maxLength={80}
+                      value={form.shipDate}
+                      onChange={(e) => setForm({ ...form, shipDate: e.target.value })}
+                      placeholder=""
+                      className="w-full min-h-[44px] px-3.5 py-2 text-sm text-slate-900 placeholder:text-slate-400 bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-sky-600 focus:ring-2 focus:ring-sky-600/20"
+                    />
+                  </div>
                 </div>
 
                 <div>

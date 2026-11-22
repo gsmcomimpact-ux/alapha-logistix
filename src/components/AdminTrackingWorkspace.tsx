@@ -33,6 +33,12 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 import {
+  POSITION_SOURCES,
+  POSITION_SOURCE_LABELS,
+  PositionSource,
+  syncPublicTracking,
+} from '../lib/publicTracking';
+import {
   exportShipmentDetailPdf,
   exportShipmentsListPdf,
   isDateRangeInvalid,
@@ -143,6 +149,7 @@ export function AdminTrackingWorkspace() {
   const [newStatus, setNewStatus] = useState<ShipmentStatus>('En transit maritime');
   const [newEta, setNewEta] = useState('');
   const [newNotes, setNewNotes] = useState('');
+  const [newSource, setNewSource] = useState<PositionSource>('confirmed');
   const [updatingPos, setUpdatingPos] = useState(false);
   const [posFeedback, setPosFeedback] = useState<{ type: 'ok' | 'err'; text: string } | null>(null);
 
@@ -504,6 +511,17 @@ export function AdminTrackingWorkspace() {
 
       await batch.commit();
 
+      void syncPublicTracking({
+        trackingCode: cleanCode,
+        transportMode,
+        origin: cleanOrigin.slice(0, FIELD_LIMITS.originDestMax),
+        destination: cleanDestination.slice(0, FIELD_LIMITS.originDestMax),
+        currentLocation: cleanLocation.slice(0, FIELD_LIMITS.locationMax),
+        currentStatus: initialStatus,
+        estimatedArrival: cleanEta.slice(0, FIELD_LIMITS.etaMax),
+        positionSource: 'confirmed',
+      });
+
       setSelectedId(shipmentId);
       setTrackingCode(generateTrackingCode());
       setCargoDescription('');
@@ -524,7 +542,10 @@ export function AdminTrackingWorkspace() {
     setPosFeedback(null);
 
     const cleanLoc = newLocation.trim().slice(0, FIELD_LIMITS.locationMax);
-    const cleanNotes = newNotes.trim().slice(0, FIELD_LIMITS.notesMax);
+    const sourceTag = `[Source : ${POSITION_SOURCE_LABELS[newSource].fr}]`;
+    const cleanNotes = `${sourceTag} ${newNotes.trim()}`
+      .trim()
+      .slice(0, FIELD_LIMITS.notesMax);
     const cleanEta = newEta.trim().slice(0, FIELD_LIMITS.etaMax);
 
     if (cleanLoc.length < 2) {
@@ -582,6 +603,17 @@ export function AdminTrackingWorkspace() {
       });
 
       await batch.commit();
+
+      void syncPublicTracking({
+        trackingCode: selectedShipment.trackingCode,
+        transportMode: selectedShipment.transportMode,
+        origin: selectedShipment.origin,
+        destination: selectedShipment.destination,
+        currentLocation: cleanLoc,
+        currentStatus: newStatus,
+        estimatedArrival: cleanEta,
+        positionSource: newSource,
+      });
 
       setNewNotes('');
       setPosFeedback({
@@ -1407,6 +1439,27 @@ export function AdminTrackingWorkspace() {
                               className="w-full min-h-[42px] px-3 py-2 text-xs text-slate-900 bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-sky-600"
                             />
                           </div>
+                        </div>
+
+                        <div>
+                          <label
+                            htmlFor="admin-new-source"
+                            className="block text-xs font-medium text-slate-700 mb-1"
+                          >
+                            Origine de l’information
+                          </label>
+                          <select
+                            id="admin-new-source"
+                            value={newSource}
+                            onChange={(e) => setNewSource(e.target.value as PositionSource)}
+                            className="w-full min-h-[42px] px-3 py-2 text-xs text-slate-900 bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-sky-600"
+                          >
+                            {POSITION_SOURCES.map((src) => (
+                              <option key={src} value={src}>
+                                {POSITION_SOURCE_LABELS[src].fr}
+                              </option>
+                            ))}
+                          </select>
                         </div>
 
                         <div>
