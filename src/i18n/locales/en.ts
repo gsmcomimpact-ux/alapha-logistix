@@ -86,7 +86,7 @@ export const en: TranslationDictionary = {
     eyebrow: 'International Transit & Freight · West Africa',
     headline: 'Customs brokerage, international freight & corridor logistics',
     subheadline:
-      'Alpha Logistix Group coordinates sea shipments from major Chinese ports (Shanghai, Ningbo, Shenzhen, Guangzhou) and air cargo from Dubai, with full customs clearance and final delivery to Niamey and the Sahel.',
+      'Alpha Logistix Group coordinates your customs formalities and the carriage of your goods to and from ports and airports around the world.',
     ctaEstimate: 'Estimate a shipment',
     ctaWhatsapp: 'WhatsApp',
     salesEmailLabel: 'Commercial desk:',

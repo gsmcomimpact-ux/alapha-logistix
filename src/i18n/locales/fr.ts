@@ -86,7 +86,7 @@ export const fr: TranslationDictionary = {
     eyebrow: 'Transit & Fret International · Afrique de l’Ouest',
     headline: 'Transit douanier, fret international et logistique de corridor',
     subheadline:
-      'Alpha Logistix Group coordonne vos expéditions maritimes depuis les grands ports de Chine (Shanghai, Ningbo, Shenzhen, Guangzhou) ainsi que vos envois aériens depuis Dubaï, avec dédouanement et acheminement jusqu’à Niamey et dans le Sahel.',
+      'Alpha Logistix Group coordonne vos formalités douanières et l’acheminement de vos marchandises au départ et à destination des ports et aéroports du monde.',
     ctaEstimate: 'Estimer une expédition',
     ctaWhatsapp: 'WhatsApp',
     salesEmailLabel: 'Service commercial :',
