@@ -309,7 +309,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           updatedAt: serverTimestamp(),
         });
       } catch (fsError) {
-        handleFirestoreError(fsError, OperationType.CREATE, profilePath);
+        // The auth account already exists: don't report a misleading auth error.
+        // The profile is created later via saveClientProfile (userProfile === null path).
+        try {
+          handleFirestoreError(fsError, OperationType.CREATE, profilePath);
+        } catch {
+          // already logged by handleFirestoreError
+        }
       }
 
       try {
