@@ -30,6 +30,7 @@ import {
   Users,
   X,
 } from 'lucide-react';
+import { AdminDashboard } from './AdminDashboard';
 import { useAuth } from '../context/AuthContext';
 import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 import {
@@ -65,6 +66,7 @@ import { ShipmentDocumentsPanel } from './ShipmentDocumentsPanel';
 import { StatusText } from './StatusText';
 
 type AdminTab =
+  | 'dashboard'
   | 'tracking'
   | 'pendingRequests'
   | 'create'
@@ -124,7 +126,7 @@ function formatDate(ts?: Timestamp | null): string {
 
 export function AdminTrackingWorkspace() {
   const { user, authReady, canManageUsers, signOutUser } = useAuth();
-  const [activeTab, setActiveTab] = useState<AdminTab>('tracking');
+  const [activeTab, setActiveTab] = useState<AdminTab>('dashboard');
   const [docPreselectClientEmail, setDocPreselectClientEmail] = useState('');
 
   const [shipments, setShipments] = useState<ShipmentRecord[]>([]);
@@ -754,6 +756,7 @@ export function AdminTrackingWorkspace() {
   return (
     <div className="space-y-6">
       {/* Admin Summary Strip */}
+      {activeTab !== 'dashboard' && (
       <div className="grid grid-cols-2 lg:grid-cols-4 border border-slate-200 rounded-xl bg-white divide-y sm:divide-y-0 sm:divide-x divide-slate-200">
         <div className="p-5">
           <p className="text-xs font-medium text-slate-500">Total dossiers</p>
@@ -780,6 +783,7 @@ export function AdminTrackingWorkspace() {
           </p>
         </div>
       </div>
+      )}
 
       {/* Admin Workspace Navigation Tabs */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -788,6 +792,19 @@ export function AdminTrackingWorkspace() {
           aria-label="Sections d'administration"
           className="inline-flex flex-wrap items-center gap-1 p-1 bg-slate-200/70 rounded-lg self-start"
         >
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === 'dashboard'}
+            onClick={() => setActiveTab('dashboard')}
+            className={`px-4 py-2 text-xs font-semibold rounded-md transition-colors whitespace-nowrap cursor-pointer min-h-[38px] ${
+              activeTab === 'dashboard'
+                ? 'bg-white text-slate-900 shadow-sm'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            Tableau de bord
+          </button>
           <button
             type="button"
             role="tab"
@@ -913,6 +930,21 @@ export function AdminTrackingWorkspace() {
           <span>Déconnexion</span>
         </button>
       </div>
+
+      {/* TAB 0: GENERAL TRACKING DASHBOARD */}
+      {activeTab === 'dashboard' && (
+        <AdminDashboard
+          shipments={shipments}
+          quotes={quotes}
+          users={registeredUsers}
+          clients={adminClients}
+          onOpenTab={(tab) => setActiveTab(tab)}
+          onOpenShipment={(id) => {
+            setSelectedId(id);
+            setActiveTab('tracking');
+          }}
+        />
+      )}
 
       {/* TAB 1: TRACKING & LIVE POSITION UPDATE */}
       {activeTab === 'tracking' && (
