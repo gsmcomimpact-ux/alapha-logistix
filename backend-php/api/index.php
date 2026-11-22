@@ -72,6 +72,7 @@ function route(): void {
         case 'POST /auth/forgot':              auth_forgot(); break;
         case 'POST /auth/resend-verification': auth_resend_verification(); break;
         case 'POST /auth/google':              auth_google(); break;
+        case 'POST /auth/staff-account':       auth_staff_account(); break;
         case 'GET /public-config':             json_out(['googleClientId' => (string) cfg('google_client_id', '')]); break;
         case 'GET /auth/verify':               page_verify(); break;
         case 'GET /auth/reset':                page_reset_form(); break;
@@ -239,6 +240,43 @@ function auth_google(): void {
     $st->execute([$id]);
     $u = $st->fetch();
     json_out(['token' => create_session($id), 'user' => user_public($u)]);
+}
+
+/**
+ * Administrator-only: create (or reset the password of) a staff member's login.
+ * The address must be a professional one; it is marked verified because an administrator
+ * vouches for it, so the member can sign in right away with e-mail + password.
+ */
+function auth_staff_account(): void {
+    $admin = require_user();
+    if (!is_super_admin($admin)) deny();
+    if (!rate_limit('staffacct:' . $admin['id'], 60, 3600)) fail('auth/too-many-requests', 'Trop de créations. Réessayez plus tard.', 429);
+
+    $b = body();
+    $email = strtolower(trim((string) ($b['email'] ?? '')));
+    $password = (string) ($b['password'] ?? '');
+    if (!valid_email($email)) fail('auth/invalid-email', 'Adresse e-mail invalide.');
+    if (!is_professional_email($email)) {
+        fail('auth/invalid-email', 'Seules les adresses professionnelles @' . cfg('staff_email_domain') . ' sont autorisées.', 403);
+    }
+    if ($email === strtolower((string) cfg('main_admin_email'))) {
+        fail('auth/operation-not-allowed', 'Le mot de passe de l\'administrateur principal se change depuis son espace.', 403);
+    }
+    if (strlen($password) < 8 || strlen($password) > 200) fail('auth/weak-password', 'Le mot de passe doit contenir au moins 8 caractères.');
+
+    $hash = password_hash($password, PASSWORD_DEFAULT);
+    $st = db()->prepare('SELECT id FROM users WHERE email = ?');
+    $st->execute([$email]);
+    $row = $st->fetch();
+    if ($row) {
+        db()->prepare('UPDATE users SET password_hash = ?, email_verified = 1, verify_token = NULL WHERE id = ?')->execute([$hash, $row['id']]);
+        db()->prepare('DELETE FROM sessions WHERE user_id = ?')->execute([$row['id']]); // old sessions end
+        json_out(['ok' => true, 'created' => false]);
+    }
+    db()->prepare(
+        'INSERT INTO users (id, email, password_hash, email_verified, display_name, created_ms) VALUES (?, ?, ?, 1, ?, ?)'
+    )->execute([new_uid(), $email, $hash, substr((string) ($b['displayName'] ?? ''), 0, 190), now_ms()]);
+    json_out(['ok' => true, 'created' => true]);
 }
 
 function auth_me(): void {

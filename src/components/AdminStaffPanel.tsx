@@ -1,4 +1,5 @@
 import { isProfessionalEmail, STAFF_EMAIL_DOMAIN } from '../lib/staffDomain';
+import { createStaffLogin, generatePassword } from '../lib/staffAccount';
 import { FormEvent, useEffect, useState } from 'react';
 import {
   collection,
@@ -40,6 +41,8 @@ export function AdminStaffPanel() {
   const [phone, setPhone] = useState('');
   const [department, setDepartment] = useState('Transit & Suivi des Expéditions');
   const [role, setRole] = useState<StaffRole>('operator');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [creating, setCreating] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
@@ -51,6 +54,7 @@ export function AdminStaffPanel() {
   const [editDepartment, setEditDepartment] = useState('');
   const [editRole, setEditRole] = useState<StaffRole>('operator');
   const [editActive, setEditActive] = useState(true);
+  const [editPassword, setEditPassword] = useState('');
   const [savingEdit, setSavingEdit] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
 
@@ -115,9 +119,28 @@ export function AdminStaffPanel() {
       setFormError('Un utilisateur avec cette adresse e-mail existe déjà.');
       return;
     }
+    if (password.length < 8) {
+      setFormError('Le mot de passe doit contenir au moins 8 caractères.');
+      return;
+    }
 
     setCreating(true);
     const path = `staffUsers/${staffId}`;
+    let loginNote = '';
+    try {
+      await createStaffLogin(cleanEmail, password, cleanName);
+    } catch (loginError) {
+      const code = (loginError as { code?: string })?.code;
+      if (code === 'auth/email-already-in-use') {
+        // Firebase: an account already exists for this address (self-registered earlier).
+        loginNote = ' Un compte existait déjà pour cette adresse : l’intéressé garde son mot de passe (ou utilise « Mot de passe oublié »).';
+      } else {
+        const msg = (loginError as { message?: string })?.message;
+        setFormError(`Impossible de créer l’accès de connexion${msg ? ` : ${msg}` : '.'}`);
+        setCreating(false);
+        return;
+      }
+    }
     try {
       await setDoc(doc(db, 'staffUsers', staffId), {
         id: staffId,
@@ -137,9 +160,11 @@ export function AdminStaffPanel() {
       setPhone('');
       setDepartment('Transit & Suivi des Expéditions');
       setRole('operator');
+      setPassword('');
+      setShowPassword(false);
       setShowCreateForm(false);
       setFeedback(
-        `Utilisateur « ${cleanName} » (${cleanEmail}) ajouté. Il peut désormais se connecter sur /administrateur.`
+        `Utilisateur « ${cleanName} » (${cleanEmail}) ajouté. Il se connecte sur /administrateur avec son e-mail et le mot de passe que vous venez de définir : communiquez-le-lui de façon sécurisée.${loginNote}`
       );
     } catch (error) {
       handleFirestoreError(error, OperationType.CREATE, path);
@@ -155,6 +180,7 @@ export function AdminStaffPanel() {
     setEditDepartment(staff.department);
     setEditRole(staff.role);
     setEditActive(staff.active);
+    setEditPassword('');
     setEditError(null);
     setFeedback(null);
     setShowCreateForm(false);
@@ -177,6 +203,21 @@ export function AdminStaffPanel() {
     setSavingEdit(true);
     const path = `staffUsers/${editingStaff.id}`;
     try {
+      if (editPassword) {
+        if (editPassword.length < 8) {
+          setEditError('Le nouveau mot de passe doit contenir au moins 8 caractères.');
+          setSavingEdit(false);
+          return;
+        }
+        try {
+          await createStaffLogin(editingStaff.email, editPassword, cleanName);
+        } catch (loginError) {
+          const msg = (loginError as { message?: string })?.message;
+          setEditError(`Mot de passe non modifié${msg ? ` : ${msg}` : '.'}`);
+          setSavingEdit(false);
+          return;
+        }
+      }
       await updateDoc(doc(db, 'staffUsers', editingStaff.id), {
         fullName: cleanName,
         phone: cleanPhone,
@@ -185,7 +226,8 @@ export function AdminStaffPanel() {
         active: editActive,
         updatedAt: serverTimestamp(),
       });
-      setFeedback(`Accès de « ${cleanName} » mis à jour.`);
+      setFeedback(`Accès de « ${cleanName} » mis à jour${editPassword ? ' (nouveau mot de passe défini)' : ''}.`);
+      setEditPassword('');
       setEditingStaff(null);
     } catch (error) {
       handleFirestoreError(error, OperationType.UPDATE, path);
@@ -312,9 +354,47 @@ export function AdminStaffPanel() {
                   maxLength={FIELD_LIMITS.staffEmailMax}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="operateur@gmail.com"
+                  placeholder="prenom.nom@alphalogistixgroup.com"
                   className="w-full min-h-[42px] px-3 py-2 text-sm text-slate-900 bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-sky-600"
                 />
+              </div>
+
+              <div>
+                <label htmlFor="staff-password" className="block text-xs font-medium text-slate-700 mb-1.5">
+                  Mot de passe de connexion (8 caractères minimum)
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    id="staff-password"
+                    type={showPassword ? 'text' : 'password'}
+                    autoComplete="new-password"
+                    minLength={8}
+                    maxLength={200}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full min-h-[42px] px-3 py-2 text-sm text-slate-900 bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-sky-600"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((v) => !v)}
+                    className="px-3 text-xs font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 cursor-pointer whitespace-nowrap"
+                  >
+                    {showPassword ? 'Masquer' : 'Afficher'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPassword(generatePassword());
+                      setShowPassword(true);
+                    }}
+                    className="px-3 text-xs font-medium text-sky-800 bg-sky-50 border border-sky-200 rounded-lg hover:bg-sky-100 cursor-pointer whitespace-nowrap"
+                  >
+                    Générer
+                  </button>
+                </div>
+                <p className="mt-1 text-xs text-slate-500">
+                  Le membre se connecte avec son e-mail et ce mot de passe. Il pourra le changer ensuite.
+                </p>
               </div>
 
               <div>
@@ -487,6 +567,22 @@ export function AdminStaffPanel() {
                   <option value="suspended">Suspendu (accès bloqué)</option>
                 </select>
               </div>
+            </div>
+
+            <div>
+              <label htmlFor="edit-staff-password" className="block text-xs font-medium text-slate-700 mb-1.5">
+                Nouveau mot de passe (laisser vide pour ne pas le changer)
+              </label>
+              <input
+                id="edit-staff-password"
+                type="password"
+                autoComplete="new-password"
+                minLength={8}
+                maxLength={200}
+                value={editPassword}
+                onChange={(e) => setEditPassword(e.target.value)}
+                className="w-full min-h-[42px] px-3 py-2 text-sm text-slate-900 bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-sky-600"
+              />
             </div>
 
             {editError && (

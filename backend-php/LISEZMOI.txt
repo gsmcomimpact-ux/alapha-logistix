@@ -41,8 +41,10 @@ Adresses du site une fois installé
 ÉTAPE 5 — Vérifier
   - https://alphalogistixgroup.com/api/health doit afficher {"ok":true}
   - https://alphalogistixgroup.com/administrateur : connexion avec l'e-mail et le mot de passe de l'étape 4.
-  - Panneau « Personnel » : ajoutez les membres avec leur adresse @alphalogistixgroup.com ;
-    chacun fait « Première connexion ? Créer mon accès » sur /administrateur, puis confirme son e-mail.
+  - Panneau « Personnel » : ajoutez chaque membre avec son adresse @alphalogistixgroup.com ET un mot de passe
+    (bouton « Générer » possible). Le membre se connecte aussitôt sur /administrateur avec son e-mail et ce mot de
+    passe, puis peut le changer. Pour réinitialiser un mot de passe : « Modifier » > « Nouveau mot de passe ».
+    Communiquez le mot de passe à l'intéressé de façon sécurisée (jamais par un canal public).
   - Envoyez-vous une demande de cotation depuis le site : elle doit arriver sur commercial@.
 
 
