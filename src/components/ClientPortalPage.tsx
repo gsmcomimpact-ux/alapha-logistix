@@ -652,10 +652,10 @@ export function ClientPortalPage() {
                 <div className="flex items-center gap-2">
                   <Phone className="w-4 h-4 text-sky-400 shrink-0" aria-hidden="true" />
                   <a
-                    href="tel:+22789994453"
+                    href="tel:+22776154211"
                     className="font-mono font-semibold text-white hover:text-sky-300 tabular-nums"
                   >
-                    +227 89 99 44 53
+                    +227 76 15 42 11
                   </a>
                 </div>
                 <div className="flex items-center gap-2 text-slate-300">
@@ -749,7 +749,7 @@ export function ClientPortalPage() {
                 </button>
 
                 <a
-                  href="https://wa.me/22789994453"
+                  href="https://wa.me/22776154211"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1.5 px-4 py-2.5 text-xs font-semibold text-white bg-orange-600 hover:bg-orange-700 rounded-lg transition-colors min-h-[40px]"

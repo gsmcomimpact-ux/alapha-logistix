@@ -153,7 +153,7 @@ function drawBrandedHeader(doc: jsPDF, title: string, subtitle: string) {
   doc.setFontSize(8.5);
   doc.setTextColor(186, 230, 253);
   doc.text(
-    'Transit International · Chine & Dubaï -> Afrique de l\'Ouest | Tel: +227 89 99 44 53 | commercial@alphalogistixgroup.com',
+    'Transit International · Chine & Dubaï -> Afrique de l\'Ouest | Tel: +227 76 15 42 11 | commercial@alphalogistixgroup.com',
     14,
     18.5
   );

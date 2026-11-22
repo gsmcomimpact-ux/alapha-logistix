@@ -30,9 +30,9 @@ interface FormState {
 }
 
 const CONTACT_EMAIL = 'commercial@alphalogistixgroup.com';
-const CONTACT_PHONE_DISPLAY = '+227 89 99 44 53';
-const CONTACT_PHONE_HREF = 'tel:+22789994453';
-const WHATSAPP_BASE_URL = 'https://wa.me/22789994453';
+const CONTACT_PHONE_DISPLAY = '+227 76 15 42 11';
+const CONTACT_PHONE_HREF = 'tel:+22776154211';
+const WHATSAPP_BASE_URL = 'https://wa.me/22776154211';
 
 const INITIAL_FORM: FormState = {
   fullName: '',
@@ -289,7 +289,7 @@ export function ContactSection({ prefill, onClearPrefill }: ContactSectionProps)
                 </div>
                 <button
                   type="button"
-                  onClick={() => handleCopy('+22789994453', 'phone')}
+                  onClick={() => handleCopy('+22776154211', 'phone')}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-orange-700 bg-orange-50 border border-orange-200 rounded-md hover:bg-orange-100 transition-colors whitespace-nowrap shrink-0 cursor-pointer min-h-[36px]"
                 >
                   {copiedField === 'phone' ? (

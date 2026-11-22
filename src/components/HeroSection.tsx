@@ -57,7 +57,7 @@ export function HeroSection({ onEstimateClick }: HeroSectionProps) {
                 </button>
 
                 <a
-                  href={`https://wa.me/22789994453?text=${whatsappText}`}
+                  href={`https://wa.me/22776154211?text=${whatsappText}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center justify-center gap-2 min-h-[44px] px-4 py-2.5 text-sm font-semibold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg transition-colors whitespace-nowrap shrink-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700"
@@ -67,11 +67,11 @@ export function HeroSection({ onEstimateClick }: HeroSectionProps) {
                 </a>
 
                 <a
-                  href="tel:+22789994453"
+                  href="tel:+22776154211"
                   className="inline-flex items-center gap-2 min-h-[44px] px-1 text-sm font-semibold text-slate-800 hover:text-sky-700 transition-colors whitespace-nowrap shrink-0"
                 >
                   <Phone className="w-4 h-4 text-sky-700" aria-hidden="true" />
-                  <span className="font-mono tabular-nums">+227 89 99 44 53</span>
+                  <span className="font-mono tabular-nums">+227 76 15 42 11</span>
                 </a>
               </div>
 
@@ -121,16 +121,16 @@ export function HeroSection({ onEstimateClick }: HeroSectionProps) {
             <p className="text-xs font-medium text-slate-500">{t.hero.stripPhoneLabel}</p>
             <div className="mt-1.5 flex items-center gap-3 flex-wrap">
               <a
-                href="tel:+22789994453"
+                href="tel:+22776154211"
                 className="font-mono text-base font-semibold text-slate-900 hover:text-sky-700 tabular-nums transition-colors"
               >
-                +227 89 99 44 53
+                +227 76 15 42 11
               </a>
               <span aria-hidden="true" className="text-slate-300">
                 ·
               </span>
               <a
-                href={`https://wa.me/22789994453?text=${whatsappText}`}
+                href={`https://wa.me/22776154211?text=${whatsappText}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-xs font-semibold text-emerald-700 hover:text-emerald-800 underline underline-offset-4 whitespace-nowrap"

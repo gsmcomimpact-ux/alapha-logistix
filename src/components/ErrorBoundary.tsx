@@ -72,8 +72,8 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
                 </h1>
                 <p className="mt-2 text-sm text-slate-600 leading-relaxed">
                   {isEn
-                    ? 'A technical incident occurred while communicating with the tracking service. You can retry, reload the page, or contact our support desk at +227 89 99 44 53.'
-                    : 'Un incident technique s’est produit lors de la communication avec le service de suivi. Vous pouvez réessayer, actualiser la page ou contacter notre support au +227 89 99 44 53.'}
+                    ? 'A technical incident occurred while communicating with the tracking service. You can retry, reload the page, or contact our support desk at +227 76 15 42 11.'
+                    : 'Un incident technique s’est produit lors de la communication avec le service de suivi. Vous pouvez réessayer, actualiser la page ou contacter notre support au +227 76 15 42 11.'}
                 </p>
                 {this.state.errorMessage && (
                   <p className="mt-3 p-3 rounded-lg bg-slate-50 border border-slate-200 font-mono text-xs text-slate-700 break-words">

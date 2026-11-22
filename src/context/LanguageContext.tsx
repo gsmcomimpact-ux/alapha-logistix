@@ -219,7 +219,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
       },
       inLanguage: localeConfig.code,
       availableLanguage: SUPPORTED_LOCALES.map((loc) => loc.nativeName),
-      telephone: '+227 89 99 44 53',
+      telephone: '+227 76 15 42 11',
       email: 'commercial@alphalogistixgroup.com',
       address: {
         '@type': 'PostalAddress',

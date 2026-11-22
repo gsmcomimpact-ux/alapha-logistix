@@ -30,12 +30,12 @@ export function Footer() {
             </p>
             <p className="mt-1.5 text-xs text-slate-400">
               alphalogistixgroup.com ·{' '}
-              <a href="tel:+22789994453" className="hover:text-white transition-colors">
-                +227 89 99 44 53
+              <a href="tel:+22776154211" className="hover:text-white transition-colors">
+                +227 76 15 42 11
               </a>{' '}
               ·{' '}
               <a
-                href="https://wa.me/22789994453"
+                href="https://wa.me/22776154211"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="hover:text-white transition-colors"

@@ -9,7 +9,7 @@ export const fr: TranslationDictionary = {
       'transport international en Afrique, transit douanier, transport routier Afrique de l’Ouest, freightforwarding, freight forwarding, project cargo, transport multimodal, logistique internationale, Alpha Logistix Group',
     ogTitle: 'Alpha Logistix Group — Transit, Fret International & Supply Chain',
     ogDescription:
-      'Transport international en Afrique, transit douanier, transport multimodal, project cargo et transport routier Afrique de l’Ouest. +227 89 99 44 53.',
+      'Transport international en Afrique, transit douanier, transport multimodal, project cargo et transport routier Afrique de l’Ouest. +227 76 15 42 11.',
     adminTitle: 'Administration — Alpha Logistix Group',
     clientPortalTitle: 'Espace Client — Alpha Logistix Group',
     serviceTypes: [
@@ -263,7 +263,7 @@ export const fr: TranslationDictionary = {
     rejectedEyebrow: 'Accès non validé',
     rejectedTitle: 'Votre compte client n’a pas encore été approuvé',
     rejectedDesc:
-      'Pour plus d’informations ou pour réactiver votre accès, veuillez contacter notre direction commerciale au +227 89 99 44 53 ou par e-mail à commercial@alphalogistixgroup.com.',
+      'Pour plus d’informations ou pour réactiver votre accès, veuillez contacter notre direction commerciale au +227 76 15 42 11 ou par e-mail à commercial@alphalogistixgroup.com.',
   },
   accountSetup: {
     eyebrowEdit: 'Mise à jour du compte client',
@@ -491,7 +491,7 @@ export const fr: TranslationDictionary = {
     copy: 'Copier',
     copied: 'Copié',
     whatsappTitle: 'WhatsApp Commercial',
-    whatsappSubtitle: 'Messagerie instantanée (+227 89 99 44 53)',
+    whatsappSubtitle: 'Messagerie instantanée (+227 76 15 42 11)',
     whatsappDesc: 'Envoi de listes de colisage, factures et demandes rapides',
     whatsappOpen: 'Ouvrir WhatsApp',
     emailLabel: 'E-mail commercial',

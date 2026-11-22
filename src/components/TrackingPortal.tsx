@@ -113,11 +113,11 @@ export function TrackingPortal() {
 
             <div className="mt-6 pt-6 border-t border-slate-800 space-y-3">
               <a
-                href="tel:+22789994453"
+                href="tel:+22776154211"
                 className="inline-flex items-center gap-2 font-mono text-sm font-semibold text-white hover:text-sky-300 tabular-nums"
               >
                 <Phone className="w-4 h-4 text-sky-400" aria-hidden="true" />
-                <span>+227 89 99 44 53</span>
+                <span>+227 76 15 42 11</span>
               </a>
               <p className="text-xs text-slate-400">commercial@alphalogistixgroup.com</p>
             </div>
