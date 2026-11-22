@@ -48,14 +48,21 @@ service cloud.firestore {
         && request.auth.token.email.lower() == 'gsmcomimpact@gmail.com';
     }
 
+    // Staff (other than the bootstrapped main admin) must use a professional address.
+    function isProfessionalEmail(email) {
+      return email is string && email.lower().matches('^[^@]+@alphalogistixgroup[.]com$');
+    }
+
     function isActiveStaff() {
       return hasValidAuthEmail()
+        && isProfessionalEmail(request.auth.token.email)
         && exists(/databases/$(database)/documents/staffUsers/$(emailKey()))
         && get(/databases/$(database)/documents/staffUsers/$(emailKey())).data.active == true;
     }
 
     function isStaffAdmin() {
       return hasValidAuthEmail()
+        && isProfessionalEmail(request.auth.token.email)
         && exists(/databases/$(database)/documents/staffUsers/$(emailKey()))
         && get(/databases/$(database)/documents/staffUsers/$(emailKey())).data.active == true
         && get(/databases/$(database)/documents/staffUsers/$(emailKey())).data.role == 'admin';
@@ -67,7 +74,7 @@ service cloud.firestore {
 
     function isAdmin() {
       return isBootstrappedAdmin()
-        || (isVerified() && exists(/databases/$(database)/documents/admins/$(request.auth.uid)))
+        || (isVerified() && isProfessionalEmail(request.auth.token.email) && exists(/databases/$(database)/documents/admins/$(request.auth.uid)))
         || isActiveStaff();
     }
 
@@ -201,6 +208,7 @@ service cloud.firestore {
         && data.id.size() >= 3 && data.id.size() <= 128 && data.id.matches('^[a-zA-Z0-9_\\-]+$')
         && data.fullName is string && data.fullName.size() >= 2 && data.fullName.size() <= 100
         && data.email is string && data.email.size() >= 5 && data.email.size() <= 120
+        && isProfessionalEmail(data.email)
         && data.phone is string && data.phone.size() <= 30
         && data.department is string && data.department.size() >= 2 && data.department.size() <= 80
         && data.role is string && data.role in ['admin', 'operator']

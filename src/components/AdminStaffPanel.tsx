@@ -1,3 +1,4 @@
+import { isProfessionalEmail, STAFF_EMAIL_DOMAIN } from '../lib/staffDomain';
 import { FormEvent, useEffect, useState } from 'react';
 import {
   collection,
@@ -94,6 +95,10 @@ export function AdminStaffPanel() {
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(cleanEmail) || cleanEmail.length > FIELD_LIMITS.staffEmailMax) {
       setFormError('Veuillez saisir une adresse e-mail professionnelle valide (max 120 caractères).');
+      return;
+    }
+    if (!isProfessionalEmail(cleanEmail) && cleanEmail !== BOOTSTRAPPED_ADMIN_EMAIL) {
+      setFormError(`Seules les adresses professionnelles @${STAFF_EMAIL_DOMAIN} sont autorisées.`);
       return;
     }
     if (cleanEmail === BOOTSTRAPPED_ADMIN_EMAIL) {

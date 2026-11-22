@@ -3,6 +3,7 @@ import { ArrowLeft, Lock, LogOut, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { BOOTSTRAPPED_ADMIN_EMAIL } from '../lib/firebase';
+import { isAllowedStaffEmail, STAFF_EMAIL_DOMAIN } from '../lib/staffDomain';
 import { ChangePasswordForm } from './ChangePasswordForm';
 import { AdminTrackingWorkspace } from './AdminTrackingWorkspace';
 import { LanguageSwitcher } from './LanguageSwitcher';
@@ -32,7 +33,9 @@ export function AdminPortalPage() {
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<{ ok: boolean; text: string } | null>(null);
 
-  const validEmail = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim());
+  const validEmail = isAllowedStaffEmail(email);
+  const emailLooksValid = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim());
+  const wrongDomain = emailLooksValid && !validEmail;
 
   // Every staff member signs in with their professional e-mail and password.
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -224,6 +227,13 @@ export function AdminPortalPage() {
                       className="w-full min-h-[44px] px-3.5 py-2 text-sm text-slate-900 bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-sky-600 focus:ring-2 focus:ring-sky-600/20"
                     />
                   </div>
+                )}
+                {wrongDomain && (
+                  <p role="alert" className="text-xs font-medium text-red-700">
+                    {en
+                      ? `Only professional @${STAFF_EMAIL_DOMAIN} addresses are accepted.`
+                      : `Seules les adresses professionnelles @${STAFF_EMAIL_DOMAIN} sont acceptées.`}
+                  </p>
                 )}
                 {notice && (
                   <p role={notice.ok ? 'status' : 'alert'} className={`text-xs font-medium ${notice.ok ? 'text-emerald-700' : 'text-red-700'}`}>

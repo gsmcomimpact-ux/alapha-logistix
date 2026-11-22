@@ -32,6 +32,7 @@ import {
   StaffUser,
   UserProfile,
 } from '../types/logistics';
+import { isProfessionalEmail } from '../lib/staffDomain';
 import { useLanguage } from './LanguageContext';
 
 interface ProfileInput {
@@ -186,7 +187,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       let resolvedRole: StaffRole | null = null;
 
       try {
-        if (user.emailVerified && emailLower.length >= 5 && emailLower.length <= FIELD_LIMITS.staffEmailMax) {
+        if (user.emailVerified && isProfessionalEmail(emailLower) && emailLower.length >= 5 && emailLower.length <= FIELD_LIMITS.staffEmailMax) {
           const staffDocId = emailToStaffId(emailLower);
           const staffSnap = await getDoc(doc(db, 'staffUsers', staffDocId));
           if (staffSnap.exists()) {
@@ -202,7 +203,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Ignore non-staff read errors
       }
 
-      if (!hasAccess && user.emailVerified) {
+      if (!hasAccess && user.emailVerified && isProfessionalEmail(emailLower)) {
         try {
           const adminSnap = await getDoc(doc(db, 'admins', user.uid));
           if (adminSnap.exists()) {
