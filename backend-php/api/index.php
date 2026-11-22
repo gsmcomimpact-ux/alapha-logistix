@@ -145,7 +145,7 @@ function auth_register(): void {
         'INSERT INTO users (id, email, password_hash, email_verified, display_name, created_ms) VALUES (?, ?, ?, 0, ?, ?)'
     )->execute([$id, $email, password_hash($password, PASSWORD_DEFAULT), substr((string) ($b['displayName'] ?? ''), 0, 190), now_ms()]);
 
-    $u = db()->query("SELECT * FROM users WHERE id = '" . $id . "'")->fetch();
+    $u = (function ($i) { $s = db()->prepare('SELECT * FROM users WHERE id = ?'); $s->execute([$i]); return $s->fetch(); })($id);
     send_verification($u);
     json_out(['token' => create_session($id), 'user' => user_public($u)]);
 }

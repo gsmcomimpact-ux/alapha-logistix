@@ -1,5 +1,5 @@
 // Firebase-Auth-compatible client backed by the PHP/MySQL API (e-mail + password only).
-import { api, ApiError, getToken, setToken } from './http';
+import { api, ApiError, getToken, setSessionExpiredHandler, setToken } from './http';
 import type { FirebaseApp } from './app';
 
 export interface UserInfo {
@@ -60,6 +60,14 @@ function emit(user: User | null): void {
   auth.currentUser = user;
   listeners.forEach((l) => l(user));
 }
+
+// The server no longer accepts our session: drop it and behave as signed out.
+setSessionExpiredHandler(() => {
+  if (!auth.currentUser) return;
+  setToken(null);
+  lastReauthPassword = null;
+  emit(null);
+});
 
 async function bootstrap(): Promise<void> {
   if (initialized) return;

@@ -296,7 +296,14 @@ function subscribe<S>(
         next(snap);
       }
     } catch (e) {
-      if (!stopped) onError?.(e as Error);
+      if (!stopped) {
+        try {
+          onError?.(e as Error);
+        } catch (cbErr) {
+          // A throwing error callback must not become an unhandled rejection.
+          console.error(cbErr);
+        }
+      }
     } finally {
       inFlight = false;
     }

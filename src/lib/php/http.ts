@@ -11,6 +11,13 @@ export class ApiError extends Error {
   }
 }
 
+let sessionExpiredHandler: (() => void) | null = null;
+
+/** Called when the server rejects a stored session token (expired, password changed elsewhere...). */
+export function setSessionExpiredHandler(fn: () => void): void {
+  sessionExpiredHandler = fn;
+}
+
 export function getToken(): string | null {
   try {
     return window.localStorage.getItem(TOKEN_KEY);
@@ -59,6 +66,9 @@ export async function api<T = any>(
   }
   if (!res.ok) {
     const err = data?.error;
+    if (res.status === 401 && token && path !== '/auth/login' && path !== '/auth/register' && path !== '/auth/reauth' && path !== '/auth/change-password') {
+      sessionExpiredHandler?.();
+    }
     if (err) throw new ApiError(err.code ?? 'internal', err.message ?? `HTTP ${res.status}`, res.status);
     const hint =
       res.status === 404

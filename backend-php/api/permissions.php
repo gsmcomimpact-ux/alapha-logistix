@@ -45,7 +45,8 @@ function can_read(string $coll, string $id, array $data, ?array $u, bool $isList
 }
 
 function deny(): void {
-    fail('permission-denied', 'Missing or insufficient permissions.', 403);
+    // 401 when the caller has no valid session (lets the site sign the user out cleanly), 403 otherwise.
+    fail('permission-denied', 'Missing or insufficient permissions.', current_user() ? 403 : 401);
 }
 
 /**

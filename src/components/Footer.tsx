@@ -5,14 +5,7 @@ import { LanguageSwitcher } from './LanguageSwitcher';
 
 export function Footer() {
   const { locale, t, navigateTo } = useLanguage();
-  const adminHref = buildLocalizedPath(locale, '/administration');
   const clientPortalHref = buildLocalizedPath(locale, '/espace-client');
-
-  const handleAdminClick = (event: MouseEvent<HTMLAnchorElement>) => {
-    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-    event.preventDefault();
-    navigateTo('/administration');
-  };
 
   const handleClientPortalClick = (event: MouseEvent<HTMLAnchorElement>) => {
     if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
@@ -100,13 +93,6 @@ export function Footer() {
             className="text-orange-400 hover:text-orange-300 transition-colors whitespace-nowrap"
           >
             {t.nav.clientPortal}
-          </a>
-          <a
-            href={adminHref}
-            onClick={handleAdminClick}
-            className="text-slate-400 hover:text-white transition-colors whitespace-nowrap"
-          >
-            {t.nav.admin}
           </a>
         </nav>
 

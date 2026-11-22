@@ -31,14 +31,14 @@ export function TopBar({ onPortalClick }: TopBarProps) {
             alt={t.footer.logoAlt}
             className="h-12 w-12 sm:h-14 sm:w-14 object-contain shrink-0"
           />
-          <span className="hidden sm:inline">{t.common.brandName}</span>
-          <span className="sm:hidden">Alpha Logistix</span>
+          <span className="hidden xl:inline">{t.common.brandName}</span>
+          <span className="hidden min-[440px]:inline xl:hidden">Alpha Logistix</span>
         </a>
 
         {/* Zone 2: 4 concise single-line nav links */}
         <nav
           aria-label={t.nav.mainNavLabel}
-          className="hidden md:flex items-center gap-6 lg:gap-8 text-sm font-medium text-slate-600"
+          className="hidden lg:flex items-center gap-5 xl:gap-8 text-sm font-medium text-slate-600"
         >
           <a href="#apropos" className="hover:text-slate-900 hover:underline underline-offset-4 decoration-slate-300 transition-colors whitespace-nowrap shrink-0 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-sky-600 rounded-sm">
             {locale === 'en' ? 'About' : 'À propos'}

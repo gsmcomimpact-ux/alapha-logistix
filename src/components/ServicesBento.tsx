@@ -220,7 +220,7 @@ export function ServicesBento({ onSelectServiceForQuote }: ServicesBentoProps) {
 
               <article className="lg:col-span-2 bg-slate-900 text-slate-100 rounded-xl p-8 flex flex-col justify-between">
                 <div>
-                  <div className="flex items-center justify-between gap-4">
+                  <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
                     <h3 className="font-display text-xl font-semibold text-white">
                       {t.services.customsTitle}
                     </h3>
