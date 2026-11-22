@@ -44,8 +44,21 @@ Adresses du site une fois installé
   - Envoyez-vous une demande de cotation depuis le site : elle doit arriver sur commercial@.
 
 
+ÉTAPE 6 (FACULTATIVE) — Connexion des clients avec leur compte Google / Gmail
+  Sans cette étape, les clients peuvent déjà s'inscrire et se connecter avec n'importe quelle adresse
+  (y compris @gmail.com) + un mot de passe. Pour ajouter le bouton « Continuer avec Google » :
+  1. https://console.cloud.google.com > créez un projet > « APIs et services » > « Écran de consentement OAuth »
+     (type Externe, nom « Alpha Logistix »), puis publiez l'application.
+  2. « Identifiants » > « Créer des identifiants » > « ID client OAuth » > type « Application Web ».
+  3. Dans « Origines JavaScript autorisées », ajoutez : https://alphalogistixgroup.com
+  4. Copiez l'ID client (se termine par .apps.googleusercontent.com) dans api/config.php :
+       'google_client_id' => 'VOTRE_ID_CLIENT.apps.googleusercontent.com',
+  Remarques : le personnel (@alphalogistixgroup.com) et l'administrateur principal ne peuvent PAS se connecter
+  avec Google : ils utilisent toujours e-mail + mot de passe.
+
+
 CE QUI FONCTIONNE AVEC CETTE VERSION
-  - Comptes e-mail + mot de passe (administrateur, personnel @alphalogistixgroup.com, clients)
+  - Comptes e-mail + mot de passe (administrateur, personnel @alphalogistixgroup.com, clients avec n'importe quelle adresse, Gmail incluse)
   - Changement de mot de passe, « mot de passe oublié » par e-mail, confirmation d'adresse par e-mail
   - Suivi public par numéro de référence, suivi détaillé et documents dans l'espace utilisateur
   - Demandes de cotation (visiteurs sans compte inclus) enregistrées ET envoyées par e-mail au service commercial
@@ -53,7 +66,7 @@ CE QUI FONCTIONNE AVEC CETTE VERSION
   - Mise à jour presque instantanée : les écrans se rafraîchissent toutes les ~6 secondes
 
 DIFFÉRENCES PAR RAPPORT À LA VERSION FIREBASE
-  - Plus de connexion Google (tout le monde utilise e-mail + mot de passe).
+  - Connexion Google : réservée aux clients et facultative (étape 6). Le personnel n'utilise que e-mail + mot de passe.
   - Les règles d'accès sont appliquées par le serveur PHP (api/permissions.php), plus par firestore.rules.
 
 SAUVEGARDES

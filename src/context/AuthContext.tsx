@@ -268,6 +268,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             ? 'Your browser blocked the sign-in popup. Please allow popups for this site.'
             : 'Votre navigateur a bloqué la fenêtre de connexion. Veuillez autoriser les pop-ups pour ce site.'
         );
+      } else if (code === 'auth/operation-not-allowed') {
+        setAuthError(
+          locale === 'en'
+            ? 'Google sign-in is not available for this account. Please use your e-mail and password.'
+            : 'La connexion Google n’est pas disponible pour ce compte. Utilisez votre e-mail et votre mot de passe.'
+        );
       } else if (code === 'auth/unauthorized-domain') {
         setAuthError(
           locale === 'en'

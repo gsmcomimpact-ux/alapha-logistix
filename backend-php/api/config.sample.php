@@ -19,4 +19,10 @@ return [
     'staff_email_domain' => 'alphalogistixgroup.com', // domaine obligatoire pour le personnel
     'setup_key' => 'CHANGER_CETTE_CLE_LONGUE_ET_ALEATOIRE', // protège setup.php (à supprimer après usage)
     'session_days' => 14,
+
+    // --- Connexion Google des clients (facultatif) ---
+    // Créer un « ID client OAuth » de type « Application Web » dans Google Cloud Console
+    // (APIs et services > Identifiants), avec « Origines JavaScript autorisées » = https://alphalogistixgroup.com
+    // Laisser vide pour désactiver le bouton Google.
+    'google_client_id' => '',
 ];

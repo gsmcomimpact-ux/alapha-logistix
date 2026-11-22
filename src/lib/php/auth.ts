@@ -149,18 +149,87 @@ export async function updatePassword(_user: User, newPassword: string): Promise<
   lastReauthPassword = null;
 }
 
-// Google sign-in is not available with the PHP backend.
+// ------------------------------------------------------------ Google sign-in ---
+// Uses Google Identity Services (token client popup). The access token is verified by the
+// PHP backend, which must hold the matching OAuth client id (api/config.php).
 export class GoogleAuthProvider {
   setCustomParameters(_params: Record<string, string>): this {
     return this;
   }
 }
 
-function unsupported(): never {
-  throw new ApiError('auth/operation-not-allowed', 'Google sign-in is not available', 400);
+const GIS_SRC = 'https://accounts.google.com/gsi/client';
+let gisReady: Promise<void> | null = null;
+let googleClientId: string | null = null;
+let googleConfigLoaded = false;
+
+function loadGis(): Promise<void> {
+  if (!gisReady) {
+    gisReady = new Promise<void>((resolve, reject) => {
+      if ((window as any).google?.accounts?.oauth2) return resolve();
+      const s = document.createElement('script');
+      s.src = GIS_SRC;
+      s.async = true;
+      s.onload = () => resolve();
+      s.onerror = () => {
+        gisReady = null;
+        reject(new ApiError('auth/network-request-failed', 'Google script blocked', 0));
+      };
+      document.head.appendChild(s);
+    });
+  }
+  return gisReady;
 }
-export async function signInWithPopup(..._args: unknown[]): Promise<never> {
-  return unsupported();
+
+/** Fetch the public config and preload the Google script so the popup opens inside the click. */
+export async function prepareGoogleSignIn(): Promise<void> {
+  if (googleConfigLoaded) return;
+  googleConfigLoaded = true;
+  try {
+    const cfg = await api<{ googleClientId: string }>('/public-config');
+    googleClientId = cfg.googleClientId || null;
+    if (googleClientId) void loadGis().catch(() => undefined);
+  } catch {
+    googleConfigLoaded = false;
+  }
+}
+
+if (typeof window !== 'undefined') void prepareGoogleSignIn();
+
+export async function signInWithPopup(_auth: Auth, _provider?: unknown) {
+  if (!googleClientId) {
+    await prepareGoogleSignIn();
+    if (!googleClientId) throw new ApiError('auth/operation-not-allowed', 'Google sign-in is not configured', 400);
+  }
+  await loadGis();
+  const accessToken = await new Promise<string>((resolve, reject) => {
+    const client = (window as any).google.accounts.oauth2.initTokenClient({
+      client_id: googleClientId,
+      scope: 'openid email profile',
+      callback: (resp: any) => {
+        if (resp?.access_token) resolve(resp.access_token);
+        else reject(new ApiError('auth/popup-closed-by-user', 'Google sign-in cancelled', 0));
+      },
+      error_callback: (err: any) =>
+        reject(
+          new ApiError(
+            err?.type === 'popup_failed_to_open' ? 'auth/popup-blocked' : 'auth/popup-closed-by-user',
+            'Google sign-in failed',
+            0
+          )
+        ),
+    });
+    client.requestAccessToken({ prompt: 'select_account' });
+  });
+  const res = await api<{ token: string; user: ApiUser }>('/auth/google', { body: { accessToken } });
+  setToken(res.token);
+  const user = makeUser(res.user);
+  emit(user);
+  return { user };
+}
+
+function unsupported(): never {
+  throw new ApiError('auth/operation-not-allowed', 'Not available with this backend', 400);
 }
 export async function reauthenticateWithPopup(..._args: unknown[]): Promise<never> {
   return unsupported();

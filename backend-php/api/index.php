@@ -37,6 +37,8 @@ function route(): void {
         case 'POST /auth/profile':             auth_profile(); break;
         case 'POST /auth/forgot':              auth_forgot(); break;
         case 'POST /auth/resend-verification': auth_resend_verification(); break;
+        case 'POST /auth/google':              auth_google(); break;
+        case 'GET /public-config':             json_out(['googleClientId' => (string) cfg('google_client_id', '')]); break;
         case 'GET /auth/verify':               page_verify(); break;
         case 'GET /auth/reset':                page_reset_form(); break;
         case 'POST /auth/reset':               page_reset_submit(); break;
@@ -99,6 +101,79 @@ function auth_login(): void {
     $ok = password_verify($password, $hash);
     if (!$u || !$ok) fail('auth/invalid-credential', 'Identifiants incorrects.', 401);
     json_out(['token' => create_session($u['id']), 'user' => user_public($u)]);
+}
+
+/** GET a JSON document over HTTPS (curl, falling back to streams). */
+function http_get_json(string $url, array $headers = []): ?array {
+    $raw = null;
+    if (function_exists('curl_init')) {
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT => 8,
+            CURLOPT_HTTPHEADER => $headers,
+            CURLOPT_SSL_VERIFYPEER => true,
+        ]);
+        $raw = curl_exec($ch);
+        $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        if ($raw === false || $code !== 200) return null;
+    } else {
+        $ctx = stream_context_create(['http' => ['timeout' => 8, 'header' => implode("\r\n", $headers)]]);
+        $raw = @file_get_contents($url, false, $ctx);
+        if ($raw === false) return null;
+    }
+    $d = json_decode((string) $raw, true);
+    return is_array($d) ? $d : null;
+}
+
+/**
+ * Sign in a client with a Google account (Google Identity Services access token).
+ * The token is verified with Google and must have been issued for OUR client id.
+ * Staff and the main administrator are refused here: they must use e-mail + password.
+ */
+function auth_google(): void {
+    $clientId = (string) cfg('google_client_id', '');
+    if ($clientId === '') fail('auth/operation-not-allowed', 'Connexion Google non configurée.');
+    if (!rate_limit('google:' . client_ip(), 20, 900)) fail('auth/too-many-requests', 'Trop de tentatives.', 429);
+
+    $access = (string) (body()['accessToken'] ?? '');
+    if (!preg_match('/^[A-Za-z0-9._\-]{20,2048}$/', $access)) fail('auth/invalid-credential', 'Jeton Google invalide.', 401);
+
+    $info = http_get_json((string) cfg('google_tokeninfo_url', 'https://oauth2.googleapis.com/tokeninfo') . '?access_token=' . urlencode($access));
+    if (!$info) fail('auth/invalid-credential', 'Jeton Google refusé.', 401);
+    $aud = (string) ($info['aud'] ?? $info['azp'] ?? '');
+    $email = strtolower((string) ($info['email'] ?? ''));
+    $verified = ($info['email_verified'] ?? '') === 'true' || ($info['email_verified'] ?? false) === true;
+    if (!hash_equals($clientId, $aud) || !$verified || !valid_email($email)) {
+        fail('auth/invalid-credential', 'Jeton Google invalide.', 401);
+    }
+    if (is_professional_email($email) || $email === strtolower((string) cfg('main_admin_email'))) {
+        fail('auth/operation-not-allowed', 'Le personnel se connecte avec son e-mail et son mot de passe.', 403);
+    }
+
+    $name = '';
+    $ui = http_get_json((string) cfg('google_userinfo_url', 'https://www.googleapis.com/oauth2/v3/userinfo'), ['Authorization: Bearer ' . $access]);
+    if ($ui && !empty($ui['name'])) $name = substr((string) $ui['name'], 0, 190);
+
+    $st = db()->prepare('SELECT * FROM users WHERE email = ?');
+    $st->execute([$email]);
+    $u = $st->fetch();
+    if (!$u) {
+        $id = new_uid();
+        db()->prepare(
+            'INSERT INTO users (id, email, password_hash, email_verified, display_name, created_ms) VALUES (?, ?, ?, 1, ?, ?)'
+        )->execute([$id, $email, password_hash(bin2hex(random_bytes(24)), PASSWORD_DEFAULT), $name, now_ms()]);
+    } else {
+        $id = $u['id'];
+        // Google proved ownership of this address.
+        db()->prepare("UPDATE users SET email_verified = 1, display_name = IF(display_name = '', ?, display_name) WHERE id = ?")
+            ->execute([$name, $id]);
+    }
+    $st = db()->prepare('SELECT * FROM users WHERE id = ?');
+    $st->execute([$id]);
+    $u = $st->fetch();
+    json_out(['token' => create_session($id), 'user' => user_public($u)]);
 }
 
 function auth_me(): void {
