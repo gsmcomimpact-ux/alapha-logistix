@@ -17,29 +17,58 @@ export function AdminPortalPage() {
     staffRole,
     authError,
     clearAuthError,
-    signInWithGoogle,
     signInWithEmail,
+    resetClientPassword,
+    registerStaffAccount,
     signOutUser,
   } = useAuth();
   const { locale, t, navigateTo } = useLanguage();
   const en = locale === 'en';
+  type LoginMode = 'login' | 'first';
+  const [mode, setMode] = useState<LoginMode>('login');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [otherEmail, setOtherEmail] = useState('');
-  const [useOtherAccount, setUseOtherAccount] = useState(false);
-  const [signingIn, setSigningIn] = useState(false);
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [notice, setNotice] = useState<{ ok: boolean; text: string } | null>(null);
 
-  // Password-only sign-in: the main administrator account is implied.
-  // Other staff members can reveal an e-mail field.
-  const handlePasswordSignIn = async (event: FormEvent<HTMLFormElement>) => {
+  const validEmail = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim());
+
+  // Every staff member signs in with their professional e-mail and password.
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!password) return;
-    setSigningIn(true);
-    await signInWithEmail(
-      useOtherAccount && otherEmail.trim() ? otherEmail : BOOTSTRAPPED_ADMIN_EMAIL,
-      password
-    );
-    setSigningIn(false);
+    setNotice(null);
+    if (!validEmail || !password) return;
+    if (mode === 'first') {
+      if (password.length < 8) {
+        setNotice({ ok: false, text: en ? 'Password must contain at least 8 characters.' : 'Le mot de passe doit contenir au moins 8 caractères.' });
+        return;
+      }
+      if (password !== confirmPassword) {
+        setNotice({ ok: false, text: en ? 'The two passwords do not match.' : 'Les deux mots de passe ne correspondent pas.' });
+        return;
+      }
+    }
+    setBusy(true);
+    if (mode === 'first') await registerStaffAccount(email, password);
+    else await signInWithEmail(email, password);
+    setBusy(false);
     setPassword('');
+    setConfirmPassword('');
+  };
+
+  const handleForgotPassword = async () => {
+    setNotice(null);
+    if (!validEmail) {
+      setNotice({ ok: false, text: en ? 'Enter your professional e-mail first.' : 'Saisissez d’abord votre adresse e-mail professionnelle.' });
+      return;
+    }
+    const res = await resetClientPassword(email);
+    setNotice(
+      res.ok
+        ? { ok: true, text: en ? 'If this account exists, a reset link has been sent by e-mail.' : 'Si ce compte existe, un lien de réinitialisation vient d’être envoyé par e-mail.' }
+        : { ok: false, text: res.error ?? '' }
+    );
   };
 
   const handleAdminLogout = async () => {
@@ -124,16 +153,16 @@ export function AdminPortalPage() {
                 />
               </div>
 
-              <p className="text-xs font-semibold text-sky-700">{t.admin.dbVerifyEyebrow}</p>
+              <p className="text-xs font-semibold text-sky-700">
+                {en ? 'Secure authentication & role-based access' : 'Authentification sécurisée & accès par rôle'}
+              </p>
               <h1 className="mt-1 font-display text-xl sm:text-2xl font-bold text-slate-900">
                 {t.admin.dbVerifyTitle}
               </h1>
               <p className="mt-2 text-sm text-slate-600 leading-relaxed">
                 {en
-                  ? 'Enter the administrator password for '
-                  : 'Saisissez le mot de passe administrateur de '}
-                <span className="font-mono text-xs text-slate-900">{BOOTSTRAPPED_ADMIN_EMAIL}</span>
-                {en ? ', or use another staff account.' : ', ou utilisez un autre compte du personnel.'}
+                  ? 'Sign in with your professional e-mail and password. Access is limited to authorised staff.'
+                  : 'Connectez-vous avec votre adresse e-mail professionnelle et votre mot de passe. L’accès est réservé au personnel autorisé.'}
               </p>
 
               {authError && (
@@ -152,44 +181,65 @@ export function AdminPortalPage() {
                 </div>
               )}
 
-              <form onSubmit={handlePasswordSignIn} className="mt-6 space-y-4" noValidate>
-                {useOtherAccount && (
-                  <div>
-                    <label htmlFor="admin-login-email" className="block text-sm font-medium text-slate-900 mb-1.5">
-                      {en ? 'Staff e-mail' : 'E-mail du personnel'}
-                    </label>
-                    <input
-                      id="admin-login-email"
-                      type="email"
-                      autoComplete="username"
-                      value={otherEmail}
-                      onChange={(e) => setOtherEmail(e.target.value)}
-                      className="w-full min-h-[44px] px-3.5 py-2 text-sm text-slate-900 bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-sky-600 focus:ring-2 focus:ring-sky-600/20"
-                    />
-                  </div>
-                )}
+              <form onSubmit={handleSubmit} className="mt-6 space-y-4" noValidate>
+                <div>
+                  <label htmlFor="admin-login-email" className="block text-sm font-medium text-slate-900 mb-1.5">
+                    {en ? 'Professional e-mail' : 'Adresse e-mail professionnelle'}
+                  </label>
+                  <input
+                    id="admin-login-email"
+                    type="email"
+                    autoComplete="username"
+                    autoFocus
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="prenom.nom@alphalogistixgroup.com"
+                    className="w-full min-h-[44px] px-3.5 py-2 text-sm text-slate-900 bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-sky-600 focus:ring-2 focus:ring-sky-600/20"
+                  />
+                </div>
                 <div>
                   <label htmlFor="admin-login-password" className="block text-sm font-medium text-slate-900 mb-1.5">
-                    {en ? 'Password' : 'Mot de passe'}
+                    {mode === 'first' ? (en ? 'Choose a password (8+ characters)' : 'Choisissez un mot de passe (8 caractères min.)') : en ? 'Password' : 'Mot de passe'}
                   </label>
                   <input
                     id="admin-login-password"
                     type="password"
-                    autoComplete="current-password"
-                    autoFocus
+                    autoComplete={mode === 'first' ? 'new-password' : 'current-password'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className="w-full min-h-[44px] px-3.5 py-2 text-sm text-slate-900 bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-sky-600 focus:ring-2 focus:ring-sky-600/20"
                   />
                 </div>
+                {mode === 'first' && (
+                  <div>
+                    <label htmlFor="admin-login-confirm" className="block text-sm font-medium text-slate-900 mb-1.5">
+                      {en ? 'Confirm password' : 'Confirmer le mot de passe'}
+                    </label>
+                    <input
+                      id="admin-login-confirm"
+                      type="password"
+                      autoComplete="new-password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      className="w-full min-h-[44px] px-3.5 py-2 text-sm text-slate-900 bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-sky-600 focus:ring-2 focus:ring-sky-600/20"
+                    />
+                  </div>
+                )}
+                {notice && (
+                  <p role={notice.ok ? 'status' : 'alert'} className={`text-xs font-medium ${notice.ok ? 'text-emerald-700' : 'text-red-700'}`}>
+                    {notice.text}
+                  </p>
+                )}
                 <div className="flex flex-wrap items-center gap-3">
                   <button
                     type="submit"
-                    disabled={signingIn || !password}
+                    disabled={busy || !validEmail || !password}
                     className="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-orange-600 hover:bg-orange-700 disabled:opacity-60 rounded-lg transition-colors cursor-pointer min-h-[44px]"
                   >
                     <ShieldCheck className="w-4 h-4" aria-hidden="true" />
-                    <span>{signingIn ? (en ? 'Signing in…' : 'Connexion…') : en ? 'Sign in' : 'Se connecter'}</span>
+                    <span>
+                      {busy ? (en ? 'Please wait…' : 'Veuillez patienter…') : mode === 'first' ? (en ? 'Create my access' : 'Créer mon accès') : en ? 'Sign in' : 'Se connecter'}
+                    </span>
                   </button>
                   <button
                     type="button"
@@ -200,21 +250,15 @@ export function AdminPortalPage() {
                   </button>
                 </div>
                 <div className="flex flex-col items-start gap-1.5 text-xs">
-                  <button
-                    type="button"
-                    onClick={() => setUseOtherAccount((v) => !v)}
-                    className="text-sky-700 underline underline-offset-4 cursor-pointer"
-                  >
-                    {useOtherAccount
-                      ? en ? 'Use the main administrator account' : 'Utiliser le compte administrateur principal'
-                      : en ? 'Other staff account' : 'Autre compte du personnel'}
+                  <button type="button" onClick={() => void handleForgotPassword()} className="text-sky-700 underline underline-offset-4 cursor-pointer">
+                    {en ? 'Forgot password?' : 'Mot de passe oublié ?'}
                   </button>
                   <button
                     type="button"
-                    onClick={() => void signInWithGoogle()}
+                    onClick={() => { setMode(mode === 'login' ? 'first' : 'login'); setNotice(null); }}
                     className="text-slate-600 underline underline-offset-4 cursor-pointer"
                   >
-                    {en ? 'First sign-in or no password yet? Continue with Google' : 'Première connexion ou pas encore de mot de passe ? Continuer avec Google'}
+                    {mode === 'login' ? (en ? 'First sign-in? Create my access' : 'Première connexion ? Créer mon accès') : en ? 'Already have an access? Sign in' : 'J’ai déjà un accès ? Me connecter'}
                   </button>
                 </div>
               </form>

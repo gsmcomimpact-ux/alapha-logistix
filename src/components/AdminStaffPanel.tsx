@@ -93,7 +93,7 @@ export function AdminStaffPanel() {
       return;
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(cleanEmail) || cleanEmail.length > FIELD_LIMITS.staffEmailMax) {
-      setFormError('Veuillez saisir une adresse e-mail Google valide (max 120 caractères).');
+      setFormError('Veuillez saisir une adresse e-mail professionnelle valide (max 120 caractères).');
       return;
     }
     if (cleanEmail === BOOTSTRAPPED_ADMIN_EMAIL) {
@@ -225,8 +225,9 @@ export function AdminStaffPanel() {
           </h3>
           <p className="mt-1 text-xs text-slate-600 max-w-2xl">
             Créez des comptes opérateurs ou administrateurs. Pour accéder à /administrateur, chaque
-            utilisateur s’authentifie directement via Firebase Auth avec son compte Google vérifié et
-            autorisé ci-dessous.
+            membre du personnel se connecte avec son adresse e-mail professionnelle et son mot de
+            passe (« Première connexion » pour créer son accès, puis validation de l’e-mail). Son adresse doit
+            être autorisée ci-dessous.
           </p>
         </div>
 
@@ -298,7 +299,7 @@ export function AdminStaffPanel() {
 
               <div>
                 <label htmlFor="staff-email" className="block text-xs font-medium text-slate-700 mb-1.5">
-                  Adresse e-mail Google autorisée
+                  Adresse e-mail professionnelle autorisée
                 </label>
                 <input
                   id="staff-email"
@@ -523,7 +524,7 @@ export function AdminStaffPanel() {
               <thead>
                 <tr className="border-b border-slate-200 bg-slate-50 text-xs font-semibold text-slate-600">
                   <th className="py-3 px-4">Utilisateur & Service</th>
-                  <th className="py-3 px-4">E-mail Google</th>
+                  <th className="py-3 px-4">E-mail professionnel</th>
                   <th className="py-3 px-4">Rôle</th>
                   <th className="py-3 px-4">Statut</th>
                   <th className="py-3 px-4 text-right">Actions</th>

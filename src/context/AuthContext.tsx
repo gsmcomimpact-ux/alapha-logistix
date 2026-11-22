@@ -68,6 +68,7 @@ interface AuthContextValue {
   signInWithEmail: (email: string, password: string) => Promise<AuthActionResult>;
   registerWithEmail: (input: RegisterEmailInput) => Promise<AuthActionResult>;
   resetClientPassword: (email: string) => Promise<AuthActionResult>;
+  registerStaffAccount: (email: string, password: string) => Promise<AuthActionResult>;
   signOutUser: () => Promise<void>;
   saveClientProfile: (input: ProfileInput) => Promise<void>;
   hasPasswordLogin: boolean;
@@ -409,6 +410,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  /**
+   * First sign-in for a staff member: creates the login credentials and sends the
+   * verification e-mail. Access is still granted only if the e-mail is registered as
+   * staff (or is the main administrator) AND verified — enforced client- and rules-side.
+   */
+  const registerStaffAccount = async (email: string, password: string): Promise<AuthActionResult> => {
+    setAuthError(null);
+    try {
+      const cred = await createUserWithEmailAndPassword(auth, email.trim().toLowerCase(), password);
+      try {
+        await sendEmailVerification(cred.user);
+      } catch {
+        // verification mail can be re-requested later
+      }
+      return { ok: true };
+    } catch (error) {
+      const code = (error as { code?: string })?.code;
+      const msg = mapFirebaseAuthError(code, locale);
+      setAuthError(msg);
+      return { ok: false, error: msg };
+    }
+  };
+
   const signOutUser = async () => {
     setAuthError(null);
     await signOut(auth);
@@ -477,6 +501,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signInWithEmail,
         registerWithEmail,
         resetClientPassword,
+        registerStaffAccount,
         signOutUser,
         saveClientProfile,
         hasPasswordLogin,
