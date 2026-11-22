@@ -17,7 +17,32 @@ try {
     route();
 } catch (Throwable $e) {
     error_log('[alpha-logistix] ' . $e->getMessage());
-    fail('internal', 'Erreur serveur.', 500);
+    fail('internal', describe_failure($e), 500);
+}
+
+/** Short, non-sensitive explanation of a server failure (no host names, users or passwords). */
+function describe_failure(Throwable $e): string {
+    if ($e instanceof PDOException) {
+        $code = (int) ($e->errorInfo[1] ?? 0);
+        $msg = $e->getMessage();
+        if ($code === 1044) {
+            return 'Accès refusé à cette base (vérifiez db_name et db_user dans api/config.php : l\'utilisateur doit être associé à la base).';
+        }
+        if ($code === 1045 || stripos($msg, 'Access denied') !== false) {
+            return 'Base de données : identifiant ou mot de passe refusé (vérifiez db_user et db_pass dans api/config.php).';
+        }
+        if ($code === 1049 || stripos($msg, 'Unknown database') !== false) {
+            return 'Base de données introuvable (vérifiez db_name dans api/config.php).';
+        }
+        if ($code === 1146 || stripos($msg, "doesn't exist") !== false) {
+            return 'Tables manquantes : importez database.sql dans phpMyAdmin.';
+        }
+        if ($code === 2002 || $code === 2006 || stripos($msg, 'getaddrinfo') !== false || stripos($msg, 'Connection refused') !== false || stripos($msg, 'No such file') !== false) {
+            return 'Serveur MySQL injoignable (vérifiez db_host dans api/config.php : voir l\'adresse indiquée dans le panneau iFastNet).';
+        }
+        return 'Erreur de base de données (code ' . $code . ').';
+    }
+    return 'Erreur serveur PHP (voir le journal d\'erreurs de l\'hébergeur).';
 }
 
 function route(): void {
@@ -44,9 +69,33 @@ function route(): void {
         case 'POST /auth/reset':               page_reset_submit(); break;
         case 'POST /db':                       db_op(); break;
         case 'POST /public/quote':             public_quote(); break;
-        case 'GET /health':                    json_out(['ok' => true]); break;
+        case 'GET /health':                    health(); break;
         default:                               fail('not-found', 'Route inconnue.', 404);
     }
+}
+
+function health(): void {
+    $out = ['ok' => true, 'php' => PHP_VERSION, 'pdo_mysql' => extension_loaded('pdo_mysql'), 'database' => 'ok', 'tables' => 'ok'];
+    if (!$out['pdo_mysql']) {
+        $out['ok'] = false;
+        $out['database'] = 'extension PHP pdo_mysql absente';
+    } else {
+        try {
+            db()->query('SELECT 1');
+            foreach (['users', 'sessions', 'docs', 'rate_limits'] as $t) {
+                try { db()->query("SELECT 1 FROM `$t` LIMIT 1"); }
+                catch (PDOException $e) { $out['ok'] = false; $out['tables'] = 'table manquante : ' . $t . ' (importer database.sql)'; break; }
+            }
+            $st = db()->prepare('SELECT COUNT(*) AS n FROM users WHERE email = ?');
+            $st->execute([strtolower((string) cfg('main_admin_email'))]);
+            $out['admin_created'] = ((int) $st->fetch()['n']) > 0;
+            if (!$out['admin_created']) $out['hint'] = 'Administrateur non créé : ouvrir api/setup.php';
+        } catch (PDOException $e) {
+            $out['ok'] = false;
+            $out['database'] = describe_failure($e);
+        }
+    }
+    json_out($out, $out['ok'] ? 200 : 500);
 }
 
 // =================================================================== AUTH ===

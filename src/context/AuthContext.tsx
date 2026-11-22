@@ -78,9 +78,16 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-function mapFirebaseAuthError(code: string | undefined, locale: 'fr' | 'en'): string {
+function mapFirebaseAuthError(code: string | undefined, locale: 'fr' | 'en', err?: unknown): string {
   const isEn = locale === 'en';
   switch (code) {
+    case 'internal': {
+      // Server-side failure (PHP backend): show the diagnostic sent by the API.
+      const detail = (err as { message?: string } | undefined)?.message;
+      return isEn
+        ? `Server error${detail ? `: ${detail}` : ''}`
+        : `Erreur serveur${detail ? ` : ${detail}` : ''}`;
+    }
     case 'auth/email-already-in-use':
       return isEn
         ? 'An account already exists with this email address. Please sign in instead.'
@@ -297,7 +304,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { ok: true };
     } catch (error) {
       const code = (error as { code?: string })?.code;
-      const msg = mapFirebaseAuthError(code, locale);
+      const msg = mapFirebaseAuthError(code, locale, error);
       setAuthError(msg);
       return { ok: false, error: msg };
     }
@@ -352,7 +359,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { ok: true };
     } catch (error) {
       const code = (error as { code?: string })?.code;
-      const msg = mapFirebaseAuthError(code, locale);
+      const msg = mapFirebaseAuthError(code, locale, error);
       setAuthError(msg);
       return { ok: false, error: msg };
     }
@@ -365,7 +372,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { ok: true };
     } catch (error) {
       const code = (error as { code?: string })?.code;
-      const msg = mapFirebaseAuthError(code, locale);
+      const msg = mapFirebaseAuthError(code, locale, error);
       return { ok: false, error: msg };
     }
   };
@@ -413,7 +420,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { ok: true };
     } catch (error) {
       const code = (error as { code?: string })?.code;
-      return { ok: false, error: mapFirebaseAuthError(code, locale) };
+      return { ok: false, error: mapFirebaseAuthError(code, locale, error) };
     }
   };
 
@@ -434,7 +441,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { ok: true };
     } catch (error) {
       const code = (error as { code?: string })?.code;
-      const msg = mapFirebaseAuthError(code, locale);
+      const msg = mapFirebaseAuthError(code, locale, error);
       setAuthError(msg);
       return { ok: false, error: msg };
     }

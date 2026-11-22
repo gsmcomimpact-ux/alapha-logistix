@@ -74,6 +74,10 @@ SAUVEGARDES
   utilisateurs sont stockés dans la base : elle contient donc toutes les données.
 
 DÉPANNAGE
+  - PREMIER RÉFLEXE : ouvrez https://alphalogistixgroup.com/api/health — la page dit exactement ce qui ne va pas
+    (base injoignable, mot de passe refusé, tables manquantes, administrateur non créé...).
+    Tout est correct quand elle affiche "ok":true et "admin_created":true.
+  - Message « Erreur serveur : ... » à la connexion : il reprend le diagnostic ci-dessus.
   - Page blanche ou erreur 500 sur /api : vérifiez config.php (identifiants de la base) et la version de PHP
     (choisir PHP 8.0 ou plus récent dans le panneau).
   - /administrateur affiche une erreur 404 : le fichier .htaccess de la racine est absent ou mod_rewrite désactivé.

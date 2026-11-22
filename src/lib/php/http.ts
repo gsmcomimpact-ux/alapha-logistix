@@ -59,7 +59,19 @@ export async function api<T = any>(
   }
   if (!res.ok) {
     const err = data?.error;
-    throw new ApiError(err?.code ?? 'internal', err?.message ?? `HTTP ${res.status}`, res.status);
+    if (err) throw new ApiError(err.code ?? 'internal', err.message ?? `HTTP ${res.status}`, res.status);
+    const hint =
+      res.status === 404
+        ? 'API introuvable (HTTP 404) : le dossier api/ et son .htaccess sont-ils bien en ligne ?'
+        : `Le serveur a répondu HTTP ${res.status} : ouvrez /api/health pour diagnostiquer.`;
+    throw new ApiError('internal', hint, res.status);
+  }
+  if (data === null) {
+    throw new ApiError(
+      'internal',
+      'Réponse inattendue de l’API : le dossier api/ est-il bien en ligne et le .htaccess actif ? (voir /api/health)',
+      res.status
+    );
   }
   return data as T;
 }
