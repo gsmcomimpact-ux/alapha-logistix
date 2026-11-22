@@ -47,8 +47,17 @@ function describe_failure(Throwable $e): string {
 
 function route(): void {
     $path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
-    $pos = strpos($path, '/api/');
-    $path = $pos === false ? '/' : substr($path, $pos + 4);
+    // Path relative to this script's folder (works at /api/ or in a sub-folder install).
+    $base = rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? '/api/index.php')), '/');
+    if ($base !== '' && strpos($path, $base . '/') === 0) {
+        $path = substr($path, strlen($base));
+    } elseif ($base !== '' && $path === $base) {
+        $path = '/';
+    } else {
+        $pos = strpos($path, '/api/');
+        $path = $pos === false ? $path : substr($path, $pos + 4);
+    }
+    if (strpos($path, '/index.php') === 0) $path = substr($path, strlen('/index.php'));
     $path = '/' . trim($path, '/');
     $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 
@@ -70,7 +79,14 @@ function route(): void {
         case 'POST /db':                       db_op(); break;
         case 'POST /public/quote':             public_quote(); break;
         case 'GET /health':                    health(); break;
-        default:                               fail('not-found', 'Route inconnue.', 404);
+        case 'GET /':                          json_out(['name' => 'Alpha Logistix API', 'ok' => true, 'diagnostic' => '/api/health']); break;
+        default:
+            $known = ['/auth/register', '/auth/login', '/auth/logout', '/auth/reauth', '/auth/change-password', '/auth/profile',
+                '/auth/forgot', '/auth/resend-verification', '/auth/google', '/db', '/public/quote'];
+            $hint = in_array($path, $known, true)
+                ? ' Cette adresse attend une requête POST envoyée par le site (pas un accès direct depuis le navigateur). Si le site affiche cette erreur, une redirection (http vers https ou www) transforme la requête en GET : vérifiez l\'adresse utilisée.'
+                : ' Pour tester l\'API, ouvrez /api/health.';
+            fail('not-found', "Route inconnue : $method $path." . $hint, 404);
     }
 }
 
