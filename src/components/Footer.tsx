@@ -73,6 +73,12 @@ export function Footer() {
           aria-label={t.nav.footerNavLabel}
           className="flex flex-wrap items-center gap-6 text-xs font-medium text-slate-300"
         >
+          <a href="#apropos" className="hover:text-white transition-colors whitespace-nowrap">
+            {locale === 'en' ? 'About' : 'À propos'}
+          </a>
+          <a href="#corridors" className="hover:text-white transition-colors whitespace-nowrap">
+            Corridors
+          </a>
           <a href="#services" className="hover:text-white transition-colors whitespace-nowrap">
             {t.nav.services}
           </a>

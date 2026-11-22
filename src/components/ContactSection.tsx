@@ -25,6 +25,7 @@ interface FormState {
   packaging: string;
   shipDate: string;
   message: string;
+  website: string; // honeypot: must stay empty
 }
 
 const CONTACT_EMAIL = 'commercial@alphalogistixgroup.com';
@@ -46,6 +47,7 @@ const INITIAL_FORM: FormState = {
   packaging: '',
   shipDate: '',
   message: '',
+  website: '',
 };
 
 function buildShipmentDetails(f: FormState, locale: string): string {
@@ -127,6 +129,11 @@ export function ContactSection({ prefill, onClearPrefill }: ContactSectionProps)
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (form.website) {
+      // Honeypot filled: almost certainly a bot. Pretend success, send nothing.
+      setForm(INITIAL_FORM);
+      return;
+    }
     if (!validate()) return;
 
     const cleanFullName = form.fullName.trim().slice(0, FIELD_LIMITS.companyMax);
@@ -672,6 +679,18 @@ export function ContactSection({ prefill, onClearPrefill }: ContactSectionProps)
                       className="w-full min-h-[44px] px-3.5 py-2 text-sm text-slate-900 placeholder:text-slate-400 bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-sky-600 focus:ring-2 focus:ring-sky-600/20"
                     />
                   </div>
+                </div>
+
+                <div aria-hidden="true" className="absolute -left-[9999px] h-0 w-0 overflow-hidden">
+                  <label htmlFor="contact-website">Website</label>
+                  <input
+                    id="contact-website"
+                    type="text"
+                    tabIndex={-1}
+                    autoComplete="off"
+                    value={form.website}
+                    onChange={(e) => setForm({ ...form, website: e.target.value })}
+                  />
                 </div>
 
                 <div>

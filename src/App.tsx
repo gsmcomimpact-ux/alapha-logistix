@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import { AuthProvider } from './context/AuthContext';
 import { LanguageProvider, useLanguage } from './context/LanguageContext';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -10,9 +10,19 @@ import { TrackingPortal } from './components/TrackingPortal';
 import { TeamSection } from './components/TeamSection';
 import { ContactSection } from './components/ContactSection';
 import { Footer } from './components/Footer';
-import { AdminPortalPage } from './components/AdminPortalPage';
-import { ClientPortalPage } from './components/ClientPortalPage';
+const AdminPortalPage = lazy(() =>
+  import('./components/AdminPortalPage').then((m) => ({ default: m.AdminPortalPage }))
+);
+const ClientPortalPage = lazy(() =>
+  import('./components/ClientPortalPage').then((m) => ({ default: m.ClientPortalPage }))
+);
 import { WhatsAppButton } from './components/WhatsAppButton';
+import {
+  AboutSection,
+  CorridorsMapSection,
+  ExtraServicesSection,
+  SectorsSection,
+} from './components/CompanySections';
 import { QuotePrefill, ServiceCategory } from './types/logistics';
 
 function PublicWebsite() {
@@ -48,7 +58,11 @@ function PublicWebsite() {
       <TopBar onPortalClick={() => navigateTo('/espace-client')} />
       <main className="flex-1">
         <HeroSection onEstimateClick={() => scrollToSection('simulateur')} />
+        <AboutSection />
         <ServicesBento onSelectServiceForQuote={handleSelectServiceForQuote} />
+        <ExtraServicesSection onRequestQuote={() => scrollToSection('contact')} />
+        <CorridorsMapSection />
+        <SectorsSection />
         <FreightCalculator onApplyToQuote={handleApplyCalculatorToQuote} />
         <TrackingPortal />
         <TeamSection />
@@ -64,8 +78,20 @@ function PublicWebsite() {
 
 function AppRouter() {
   const { subPath } = useLanguage();
-  if (subPath === '/administration') return <AdminPortalPage />;
-  if (subPath === '/espace-client') return <ClientPortalPage />;
+  if (subPath === '/administration') {
+    return (
+      <Suspense fallback={<div className="min-h-screen bg-slate-50" aria-busy="true" />}>
+        <AdminPortalPage />
+      </Suspense>
+    );
+  }
+  if (subPath === '/espace-client') {
+    return (
+      <Suspense fallback={<div className="min-h-screen bg-slate-50" aria-busy="true" />}>
+        <ClientPortalPage />
+      </Suspense>
+    );
+  }
   return <PublicWebsite />;
 }
 

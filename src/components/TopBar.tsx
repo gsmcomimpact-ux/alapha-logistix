@@ -40,11 +40,17 @@ export function TopBar({ onPortalClick }: TopBarProps) {
           aria-label={t.nav.mainNavLabel}
           className="hidden md:flex items-center gap-6 lg:gap-8 text-sm font-medium text-slate-600"
         >
+          <a href="#apropos" className="hover:text-slate-900 hover:underline underline-offset-4 decoration-slate-300 transition-colors whitespace-nowrap shrink-0 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-sky-600 rounded-sm">
+            {locale === 'en' ? 'About' : 'À propos'}
+          </a>
           <a
             href="#services"
             className="hover:text-slate-900 hover:underline underline-offset-4 decoration-slate-300 transition-colors whitespace-nowrap shrink-0 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-sky-600 rounded-sm"
           >
             {t.nav.services}
+          </a>
+          <a href="#corridors" className="hover:text-slate-900 hover:underline underline-offset-4 decoration-slate-300 transition-colors whitespace-nowrap shrink-0 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-sky-600 rounded-sm">
+            {locale === 'en' ? 'Corridors' : 'Corridors'}
           </a>
           <a
             href="#simulateur"
