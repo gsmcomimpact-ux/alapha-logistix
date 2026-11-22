@@ -9,6 +9,6 @@ RewriteCond %{HTTP:Authorization} ^(.*)
 RewriteRule .* - [E=HTTP_AUTHORIZATION:%1]
 
 # Fichiers sensibles inaccessibles
-<FilesMatch "^(config(\.sample)?\.php|lib\.php|permissions\.php)$">
+<FilesMatch "^(config(\.sample)?\.php|lib\.php|permissions\.php|schema\.sql)$">
   Require all denied
 </FilesMatch>

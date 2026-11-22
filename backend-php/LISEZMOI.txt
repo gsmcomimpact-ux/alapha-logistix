@@ -17,6 +17,8 @@ Adresses du site une fois installé
      (souvent « localhost » ou du type sqlXXX.hébergeur.com — elle est indiquée dans le panneau).
   3. Ouvrez phpMyAdmin, sélectionnez la base, onglet « Importer », choisissez database.sql, validez.
 
+  (Alternative sans phpMyAdmin : après l'étape 3, ouvrez /api/setup.php et utilisez « Étape A — Créer les tables ».)
+
 ÉTAPE 2 — Envoyer les fichiers
   1. Avec le gestionnaire de fichiers ou un client FTP, envoyez TOUT le contenu de public_html/
      dans le dossier racine du site (là où se trouve index.html du domaine).
