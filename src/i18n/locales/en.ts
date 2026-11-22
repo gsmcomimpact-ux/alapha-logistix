@@ -97,7 +97,7 @@ export const en: TranslationDictionary = {
     stripChinaLabel: 'China Ports (Sea Freight)',
     stripChinaValue: 'Shanghai · Ningbo · Shenzhen · Guangzhou',
     stripCorridorsLabel: 'Air Freight & West African Corridors',
-    stripCorridorsValue: 'Dubai · Cotonou · Lomé · Niamey',
+    stripCorridorsValue: 'Dubai · Cotonou · Lomé · Lagos · Niamey',
     stripPhoneLabel: 'Phone & WhatsApp',
     stripWhatsappLink: 'Message on WhatsApp',
     stripEmailLabel: 'Quote email',
@@ -112,13 +112,13 @@ export const en: TranslationDictionary = {
     tabCustoms: 'Customs & Storage',
     maritimeTitle: '01. Sea Freight & Corridor Transit',
     maritimeDesc:
-      'Full container loads (20’ & 40’ FCL), LCL consolidation, and RoRo cargo departing major Chinese ports (Shanghai, Ningbo, Shenzhen, Guangzhou, Qingdao). We handle port discharge and bonded road transit from Cotonou, Lomé, Tema, and Abidjan to Niamey and the Sahel.',
+      'Full container loads (20’ & 40’ FCL), LCL consolidation, and RoRo cargo departing major Chinese ports (Shanghai, Ningbo, Shenzhen, Guangzhou, Qingdao). We handle port discharge and bonded road transit from Cotonou, Lomé, Tema, Lagos, and Abidjan to Niamey and the Sahel.',
     chinaPortsTitle: 'China Port Departures',
     chinaPortsDesc:
       'FCL/LCL sailings from Shanghai, Ningbo, Yantian, Nansha, Qingdao, and Xiamen.',
     corridorsTitle: 'West African Corridors',
     corridorsDesc:
-      'Secured bonded road haulage from Cotonou, Lomé, Tema, and Abidjan to Niamey.',
+      'Secured bonded road haulage from Cotonou, Lomé, Tema, Lagos, and Abidjan to Niamey.',
     blTrackingTitle: 'B/L & Waiver Compliance',
     blTrackingDesc: 'ECTN/BESC verification, transit manifests, and port release management.',
     maritimeCta: 'Request a sea freight rate',
@@ -493,7 +493,7 @@ export const en: TranslationDictionary = {
     whatsappOpen: 'Open WhatsApp',
     emailLabel: 'Commercial email',
     portalLabel: 'Official portal',
-    portalLocations: 'Niamey, Niger · China, Dubai, Cotonou, Lomé, Tema & Abidjan routes',
+    portalLocations: 'Niamey, Niger · China, Dubai, Cotonou, Lomé, Tema, Lagos & Abidjan routes',
     formTitle: 'Quote request or new shipment inquiry',
     formSubtitle: 'Fast response from our commercial desk.',
     resetParams: 'Reset parameters',

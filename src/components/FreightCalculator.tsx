@@ -52,6 +52,7 @@ const WEST_AFRICA_PORTS: LocalizedPlace[] = [
   { id: 'cotonou', labels: { fr: 'Port de Cotonou (Bénin)', en: 'Port of Cotonou (Benin)' } },
   { id: 'lome', labels: { fr: 'Port de Lomé (Togo)', en: 'Port of Lomé (Togo)' } },
   { id: 'tema', labels: { fr: 'Port de Tema (Ghana)', en: 'Port of Tema (Ghana)' } },
+  { id: 'lagos', labels: { fr: 'Port de Lagos (Nigéria)', en: 'Port of Lagos (Nigeria)' } },
   { id: 'abidjan', labels: { fr: 'Port d’Abidjan (Côte d’Ivoire)', en: 'Port of Abidjan (Ivory Coast)' } },
 ];
 
