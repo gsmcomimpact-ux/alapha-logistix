@@ -112,7 +112,7 @@ export const fr: TranslationDictionary = {
     tabCustoms: 'Douane & Stockage',
     maritimeTitle: '01. Fret Maritime & Transit de Corridor',
     maritimeDesc:
-      'Prise en charge de vos conteneurs complets (20’ et 40’), groupages maritimes et matériels roulants au départ des ports chinois (Shanghai, Ningbo, Shenzhen, Guangzhou, Qingdao). Nous assurons le débarquement et le relais routier sous douane depuis Cotonou, Lomé, Tema et Abidjan jusqu’à Niamey et le Sahel.',
+      'Prise en charge de vos conteneurs complets (20’ et 40’), groupages maritimes et matériels roulants au départ des ports chinois (Shanghai, Ningbo, Shenzhen, Guangzhou, Qingdao). Nous assurons le débarquement et le relais routier sous douane depuis Cotonou, Lomé, Tema, Lagos et Abidjan jusqu’à Niamey et le Sahel.',
     chinaPortsTitle: 'Départs Ports de Chine',
     chinaPortsDesc:
       'Chargements FCL/LCL depuis Shanghai, Ningbo, Yantian, Nansha, Qingdao et Xiamen.',
