@@ -12,7 +12,7 @@ googleProvider.setCustomParameters({
   prompt: 'select_account',
 });
 
-export const BOOTSTRAPPED_ADMIN_EMAIL = 'gsmcomimpact@gmail.com';
+export const BOOTSTRAPPED_ADMIN_EMAIL = 'djimba.chamid@alphalogistixgroup.com';
 
 export enum OperationType {
   CREATE = 'create',

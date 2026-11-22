@@ -45,7 +45,7 @@ service cloud.firestore {
     function isBootstrappedAdmin() {
       return isVerified()
         && request.auth.token.email != null
-        && request.auth.token.email.lower() == 'gsmcomimpact@gmail.com';
+        && request.auth.token.email.lower() == 'djimba.chamid@alphalogistixgroup.com';
     }
 
     // Staff (other than the bootstrapped main admin) must use a professional address.

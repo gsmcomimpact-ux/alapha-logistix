@@ -15,7 +15,7 @@ return [
     'notify_clients_by_email' => true,                          // e-mail au client à chaque notification de suivi
 
     // --- Sécurité ---
-    'main_admin_email' => 'gsmcomimpact@gmail.com',  // administrateur principal (seule adresse hors domaine autorisée)
+    'main_admin_email' => 'djimba.chamid@alphalogistixgroup.com',  // administrateur principal (compte propriétaire du système)
     'staff_email_domain' => 'alphalogistixgroup.com', // domaine obligatoire pour le personnel
     'setup_key' => 'CHANGER_CETTE_CLE_LONGUE_ET_ALEATOIRE', // protège setup.php (à supprimer après usage)
     'session_days' => 14,

@@ -35,7 +35,7 @@ Adresses du site une fois installé
 ÉTAPE 4 — Créer le compte administrateur
   1. Ouvrez https://alphalogistixgroup.com/api/setup.php
   2. Saisissez la clé setup_key et choisissez le mot de passe de l'administrateur principal
-     (compte : gsmcomimpact@gmail.com — modifiable dans config.php avant cette étape).
+     (compte : djimba.chamid@alphalogistixgroup.com).
   3. IMPORTANT : supprimez ensuite le fichier api/setup.php du serveur.
 
 ÉTAPE 5 — Vérifier
