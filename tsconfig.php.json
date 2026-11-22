@@ -1,0 +1,11 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "paths": {
+      "@/*": ["./*"],
+      "firebase/app": ["./src/lib/php/app.ts"],
+      "firebase/auth": ["./src/lib/php/auth.ts"],
+      "firebase/firestore": ["./src/lib/php/firestore.ts"]
+    }
+  }
+}

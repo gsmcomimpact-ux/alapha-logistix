@@ -1,0 +1,36 @@
+# Alpha Logistix — configuration Apache (iFastNet) — à placer à la racine du site (public_html)
+Options -Indexes
+
+<IfModule mod_rewrite.c>
+RewriteEngine On
+
+# Forcer HTTPS (certificat SSL fourni par l'hébergeur)
+RewriteCond %{HTTPS} off
+RewriteCond %{HTTP:X-Forwarded-Proto} !https
+RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# Application monopage : /administrateur, /utilisateur, /fr, /en... renvoient index.html
+RewriteCond %{REQUEST_URI} !^/api/
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^ /index.html [L]
+</IfModule>
+
+# En-têtes de sécurité
+<IfModule mod_headers.c>
+Header always set X-Content-Type-Options "nosniff"
+Header always set X-Frame-Options "SAMEORIGIN"
+Header always set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+# Compression et cache (performance)
+<IfModule mod_deflate.c>
+AddOutputFilterByType DEFLATE text/html text/css application/javascript application/json image/svg+xml
+</IfModule>
+<IfModule mod_expires.c>
+ExpiresActive On
+ExpiresByType image/jpeg "access plus 1 year"
+ExpiresByType text/css "access plus 1 year"
+ExpiresByType application/javascript "access plus 1 year"
+ExpiresByType text/html "access plus 0 seconds"
+</IfModule>

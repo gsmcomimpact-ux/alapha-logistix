@@ -4,8 +4,21 @@ import fs from 'fs';
 import path from 'path';
 import {defineConfig} from 'vite';
 
-export default defineConfig(() => {
+export default defineConfig(({mode}) => {
+  // `vite build --mode php` targets the PHP/MySQL backend (iFastNet shared hosting):
+  // Firebase imports are swapped for API-backed compatible shims.
+  const php = mode === 'php';
+  const phpAliases: Record<string, string> = php
+    ? {
+        'firebase/app': path.resolve(__dirname, 'src/lib/php/app.ts'),
+        'firebase/auth': path.resolve(__dirname, 'src/lib/php/auth.ts'),
+        'firebase/firestore': path.resolve(__dirname, 'src/lib/php/firestore.ts'),
+      }
+    : {};
   return {
+    define: {
+      __PHP_BACKEND__: JSON.stringify(php),
+    },
     plugins: [
       react(),
       tailwindcss(),
@@ -31,6 +44,7 @@ export default defineConfig(() => {
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),
+        ...phpAliases,
       },
     },
     server: {

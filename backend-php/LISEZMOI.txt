@@ -1,0 +1,69 @@
+ALPHA LOGISTIX — INSTALLATION SUR IFASTNET (PHP + MySQL)
+=========================================================
+
+Contenu du dossier
+  public_html/   -> à envoyer à la racine du site (dossier « htdocs » ou « public_html »)
+  database.sql   -> à importer dans MySQL (phpMyAdmin)
+
+Adresses du site une fois installé
+  Site public ........ https://alphalogistixgroup.com
+  Administrateur ..... https://alphalogistixgroup.com/administrateur
+  Utilisateurs ....... https://alphalogistixgroup.com/utilisateur
+
+
+ÉTAPE 1 — Créer la base de données
+  1. Panneau iFastNet > « MySQL Databases » : créez une base, un utilisateur et un mot de passe.
+  2. Notez : nom de la base, utilisateur, mot de passe ET l'adresse du serveur MySQL
+     (souvent « localhost » ou du type sqlXXX.hébergeur.com — elle est indiquée dans le panneau).
+  3. Ouvrez phpMyAdmin, sélectionnez la base, onglet « Importer », choisissez database.sql, validez.
+
+ÉTAPE 2 — Envoyer les fichiers
+  1. Avec le gestionnaire de fichiers ou un client FTP, envoyez TOUT le contenu de public_html/
+     dans le dossier racine du site (là où se trouve index.html du domaine).
+  2. Vérifiez que le fichier « .htaccess » (fichier caché) est bien présent à la racine ET dans le dossier api/.
+
+ÉTAPE 3 — Configurer
+  1. Dans le dossier api/, copiez config.sample.php en config.php, puis modifiez :
+       db_host / db_name / db_user / db_pass  -> valeurs de l'étape 1
+       setup_key                               -> une longue phrase secrète aléatoire (20+ caractères)
+       mail_from                               -> une boîte e-mail du domaine (ex. noreply@alphalogistixgroup.com)
+       commercial_email                        -> commercial@alphalogistixgroup.com (reçoit les cotations)
+  2. Créez les boîtes e-mail correspondantes dans le panneau (au minimum noreply@ et commercial@).
+
+ÉTAPE 4 — Créer le compte administrateur
+  1. Ouvrez https://alphalogistixgroup.com/api/setup.php
+  2. Saisissez la clé setup_key et choisissez le mot de passe de l'administrateur principal
+     (compte : gsmcomimpact@gmail.com — modifiable dans config.php avant cette étape).
+  3. IMPORTANT : supprimez ensuite le fichier api/setup.php du serveur.
+
+ÉTAPE 5 — Vérifier
+  - https://alphalogistixgroup.com/api/health doit afficher {"ok":true}
+  - https://alphalogistixgroup.com/administrateur : connexion avec l'e-mail et le mot de passe de l'étape 4.
+  - Panneau « Personnel » : ajoutez les membres avec leur adresse @alphalogistixgroup.com ;
+    chacun fait « Première connexion ? Créer mon accès » sur /administrateur, puis confirme son e-mail.
+  - Envoyez-vous une demande de cotation depuis le site : elle doit arriver sur commercial@.
+
+
+CE QUI FONCTIONNE AVEC CETTE VERSION
+  - Comptes e-mail + mot de passe (administrateur, personnel @alphalogistixgroup.com, clients)
+  - Changement de mot de passe, « mot de passe oublié » par e-mail, confirmation d'adresse par e-mail
+  - Suivi public par numéro de référence, suivi détaillé et documents dans l'espace utilisateur
+  - Demandes de cotation (visiteurs sans compte inclus) enregistrées ET envoyées par e-mail au service commercial
+  - Notifications de suivi aux clients par e-mail (option notify_clients_by_email dans config.php)
+  - Mise à jour presque instantanée : les écrans se rafraîchissent toutes les ~6 secondes
+
+DIFFÉRENCES PAR RAPPORT À LA VERSION FIREBASE
+  - Plus de connexion Google (tout le monde utilise e-mail + mot de passe).
+  - Les règles d'accès sont appliquées par le serveur PHP (api/permissions.php), plus par firestore.rules.
+
+SAUVEGARDES
+  Exportez régulièrement la base depuis phpMyAdmin (onglet « Exporter »). Les documents envoyés par les
+  utilisateurs sont stockés dans la base : elle contient donc toutes les données.
+
+DÉPANNAGE
+  - Page blanche ou erreur 500 sur /api : vérifiez config.php (identifiants de la base) et la version de PHP
+    (choisir PHP 8.0 ou plus récent dans le panneau).
+  - /administrateur affiche une erreur 404 : le fichier .htaccess de la racine est absent ou mod_rewrite désactivé.
+  - Aucun e-mail reçu : vérifiez que la boîte mail_from existe ; contrôlez les courriers indésirables ;
+    certains forfaits gratuits limitent la fonction mail() de PHP.
+  - Connexion impossible après plusieurs essais : le blocage anti-abus dure 15 minutes.

@@ -76,4 +76,6 @@ async function testConnection() {
   }
 }
 
-void testConnection();
+if (!__PHP_BACKEND__) {
+  void testConnection();
+}

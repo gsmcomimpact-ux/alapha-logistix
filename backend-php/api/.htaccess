@@ -1,0 +1,14 @@
+# Toutes les requêtes /api/... passent par index.php (sauf setup.php).
+RewriteEngine On
+RewriteCond %{REQUEST_URI} !/api/setup\.php$
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^ index.php [QSA,L]
+
+# Transmettre l'en-tête Authorization à PHP (certains hébergeurs le suppriment)
+RewriteCond %{HTTP:Authorization} ^(.*)
+RewriteRule .* - [E=HTTP_AUTHORIZATION:%1]
+
+# Fichiers sensibles inaccessibles
+<FilesMatch "^(config(\.sample)?\.php|lib\.php|permissions\.php)$">
+  Require all denied
+</FilesMatch>

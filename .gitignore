@@ -6,3 +6,6 @@ coverage/
 *.log
 .env*
 !.env.example
+
+# PHP backend secrets
+backend-php/api/config.php

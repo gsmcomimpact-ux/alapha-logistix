@@ -4,6 +4,7 @@ import { AlertCircle, Check, CheckCircle2, Copy, Globe, Mail, MessageCircle, Pho
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { db } from '../lib/firebase';
+import { api } from '../lib/php/http';
 import { FIELD_LIMITS, QuotePrefill, ServiceCategory, TRANSPORT_MODES } from '../types/logistics';
 
 interface ContactSectionProps {
@@ -180,6 +181,29 @@ export function ContactSection({ prefill, onClearPrefill }: ContactSectionProps)
         savedQuoteCode = quoteCode;
       } catch {
         // Fallback smoothly to WhatsApp / E-mail confirmation if offline
+      } finally {
+        setSubmitting(false);
+      }
+    } else if (__PHP_BACKEND__) {
+      // Visitors without an account: the PHP backend stores the request and e-mails the sales team.
+      setSubmitting(true);
+      try {
+        const res = await api<{ quoteCode: string }>('/public/quote', {
+          body: {
+            fullName: cleanFullName,
+            company: cleanCompany,
+            email: cleanEmail,
+            phone: cleanPhone,
+            transportMode: form.service,
+            origin: cleanOriginCountry || prefill?.origin || '',
+            destination: cleanDestCountry || prefill?.destination || '',
+            message: cleanMessage,
+            website: form.website,
+          },
+        });
+        savedQuoteCode = res.quoteCode;
+      } catch {
+        // Fall back to the WhatsApp / e-mail links shown after submission.
       } finally {
         setSubmitting(false);
       }
