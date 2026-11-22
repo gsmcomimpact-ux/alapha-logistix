@@ -1,0 +1,904 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Safety Net (Default Deny)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // -------------------------------------------------------------------------
+    // Global Hardened Helpers
+    // -------------------------------------------------------------------------
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function hasValidAuthEmail() {
+      return isVerified()
+        && request.auth.token.email != null
+        && request.auth.token.email.size() >= 5
+        && request.auth.token.email.size() <= 120;
+    }
+
+    function emailKey() {
+      return request.auth.token.email.lower().replace('[^a-z0-9]', '_');
+    }
+
+    function isOwner(userId) {
+      return isVerified() && request.auth.uid == userId;
+    }
+
+    function isBootstrappedAdmin() {
+      return isVerified()
+        && request.auth.token.email != null
+        && request.auth.token.email.lower() == 'gsmcomimpact@gmail.com';
+    }
+
+    function isActiveStaff() {
+      return hasValidAuthEmail()
+        && exists(/databases/$(database)/documents/staffUsers/$(emailKey()))
+        && get(/databases/$(database)/documents/staffUsers/$(emailKey())).data.active == true;
+    }
+
+    function isStaffAdmin() {
+      return hasValidAuthEmail()
+        && exists(/databases/$(database)/documents/staffUsers/$(emailKey()))
+        && get(/databases/$(database)/documents/staffUsers/$(emailKey())).data.active == true
+        && get(/databases/$(database)/documents/staffUsers/$(emailKey())).data.role == 'admin';
+    }
+
+    function isSuperAdmin() {
+      return isBootstrappedAdmin() || isStaffAdmin();
+    }
+
+    function isAdmin() {
+      return isBootstrappedAdmin()
+        || (isVerified() && exists(/databases/$(database)/documents/admins/$(request.auth.uid)))
+        || isActiveStaff();
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isValidTransportMode(mode) {
+      return mode in [
+        'Fret maritime',
+        'Fret aérien',
+        'Corridor routier',
+        'Dédouanement & Entreposage'
+      ];
+    }
+
+    function isValidShipmentStatus(status) {
+      return status in [
+        'Pris en charge',
+        'En transit maritime',
+        'En transit aérien',
+        'Arrivé au port / hub',
+        'En dédouanement',
+        'En route corridor',
+        'Livré'
+      ];
+    }
+
+    function isValidDocType(docType) {
+      return docType in [
+        'Bill of Lading',
+        'Air Waybill',
+        'Packing list',
+        'Facture commerciale',
+        'Documents douaniers',
+        'Preuve de livraison'
+      ];
+    }
+
+    function isClientUploadableDocType(docType) {
+      return docType in [
+        'Packing list',
+        'Facture commerciale'
+      ];
+    }
+
+    function isValidDocVisibility(visibility) {
+      return visibility in ['client', 'internal'];
+    }
+
+    function isValidDocMimeType(mimeType) {
+      return mimeType in [
+        'application/pdf',
+        'image/jpeg',
+        'image/png',
+        'image/webp',
+        'text/url'
+      ];
+    }
+
+    function isValidQuoteStatus(status) {
+      return status in [
+        'En attente',
+        "À l'étude",
+        'Devis envoyé',
+        'Acceptée',
+        'Archivée'
+      ];
+    }
+
+    function isValidNotificationCategory(category) {
+      return category in ['position', 'document', 'status', 'quote'];
+    }
+
+    function isValidClientAccountStatus(status) {
+      return status in ['pending', 'validated', 'rejected'];
+    }
+
+    // -------------------------------------------------------------------------
+    // Entity Validation Blueprints
+    // -------------------------------------------------------------------------
+    function isValidUserProfile(data, userId) {
+      return data.keys().hasAll([
+          'uid', 'fullName', 'email', 'phone', 'company', 'city', 'role', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'uid', 'fullName', 'email', 'phone', 'company', 'city', 'role', 'accountStatus', 'createdAt', 'updatedAt'
+        ])
+        && data.uid is string && data.uid == userId
+        && data.uid.size() >= 1 && data.uid.size() <= 128 && data.uid.matches('^[a-zA-Z0-9_\\-]+$')
+        && data.fullName is string && data.fullName.size() >= 2 && data.fullName.size() <= 100
+        && data.email is string && data.email.size() >= 5 && data.email.size() <= 150
+        && data.phone is string && data.phone.size() >= 4 && data.phone.size() <= 30
+        && data.company is string && data.company.size() >= 1 && data.company.size() <= 120
+        && data.city is string && data.city.size() >= 2 && data.city.size() <= 80
+        && data.role is string && data.role == 'client'
+        && (!('accountStatus' in data) || (data.accountStatus is string && isValidClientAccountStatus(data.accountStatus)))
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidClientRecord(data, clientId) {
+      return data.keys().hasAll([
+          'id', 'fullName', 'email', 'phone', 'company', 'city', 'address', 'notes', 'createdBy', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'id', 'fullName', 'email', 'phone', 'company', 'city', 'address', 'notes', 'createdBy', 'createdAt', 'updatedAt'
+        ])
+        && data.id is string && data.id == clientId
+        && data.id.size() >= 4 && data.id.size() <= 64 && data.id.matches('^[a-zA-Z0-9_\\-]+$')
+        && data.fullName is string && data.fullName.size() >= 2 && data.fullName.size() <= 100
+        && data.email is string && data.email.size() >= 5 && data.email.size() <= 150
+        && data.phone is string && data.phone.size() >= 4 && data.phone.size() <= 30
+        && data.company is string && data.company.size() >= 1 && data.company.size() <= 120
+        && data.city is string && data.city.size() >= 2 && data.city.size() <= 80
+        && data.address is string && data.address.size() <= 200
+        && data.notes is string && data.notes.size() <= 500
+        && data.createdBy is string && data.createdBy.size() >= 1 && data.createdBy.size() <= 128
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidStaffUser(data, staffId) {
+      return data.keys().hasAll([
+          'id', 'fullName', 'email', 'phone', 'department', 'role', 'active', 'addedBy', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'id', 'fullName', 'email', 'phone', 'department', 'role', 'active', 'addedBy', 'createdAt', 'updatedAt'
+        ])
+        && data.id is string && data.id == staffId
+        && data.id.size() >= 3 && data.id.size() <= 128 && data.id.matches('^[a-zA-Z0-9_\\-]+$')
+        && data.fullName is string && data.fullName.size() >= 2 && data.fullName.size() <= 100
+        && data.email is string && data.email.size() >= 5 && data.email.size() <= 120
+        && data.phone is string && data.phone.size() <= 30
+        && data.department is string && data.department.size() >= 2 && data.department.size() <= 80
+        && data.role is string && data.role in ['admin', 'operator']
+        && data.active is bool
+        && data.addedBy is string && data.addedBy.size() >= 1 && data.addedBy.size() <= 128
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidAdminRecord(data, adminId) {
+      return data.keys().hasAll(['uid', 'email', 'addedBy', 'createdAt'])
+        && data.keys().hasOnly(['uid', 'email', 'addedBy', 'createdAt'])
+        && data.uid is string && data.uid == adminId
+        && data.uid.size() >= 1 && data.uid.size() <= 128 && data.uid.matches('^[a-zA-Z0-9_\\-]+$')
+        && data.email is string && data.email.size() >= 5 && data.email.size() <= 150
+        && data.addedBy is string && data.addedBy == request.auth.uid
+        && data.addedBy.size() >= 1 && data.addedBy.size() <= 128
+        && data.createdAt is timestamp;
+    }
+
+    function isValidShipment(data, shipmentId) {
+      return data.keys().hasAll([
+          'id', 'trackingCode', 'clientUid', 'clientEmail', 'clientName',
+          'transportMode', 'origin', 'destination', 'cargoDescription',
+          'weightOrVolume', 'currentLocation', 'currentStatus',
+          'estimatedArrival', 'updatesCount', 'createdBy', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'id', 'trackingCode', 'clientUid', 'clientEmail', 'clientName',
+          'transportMode', 'origin', 'destination', 'cargoDescription',
+          'weightOrVolume', 'currentLocation', 'currentStatus',
+          'estimatedArrival', 'updatesCount', 'createdBy', 'createdAt', 'updatedAt'
+        ])
+        && data.id is string && data.id == shipmentId
+        && data.id.size() >= 4 && data.id.size() <= 40 && data.id.matches('^[a-zA-Z0-9_\\-]+$')
+        && data.trackingCode is string
+        && data.trackingCode.size() >= 4 && data.trackingCode.size() <= 40
+        && data.trackingCode.matches('^[A-Z0-9\\-]+$')
+        && data.clientUid is string && data.clientUid.size() <= 128
+        && data.clientEmail is string && data.clientEmail.size() >= 5 && data.clientEmail.size() <= 150
+        && data.clientName is string && data.clientName.size() >= 2 && data.clientName.size() <= 120
+        && data.transportMode is string && isValidTransportMode(data.transportMode)
+        && data.origin is string && data.origin.size() >= 2 && data.origin.size() <= 120
+        && data.destination is string && data.destination.size() >= 2 && data.destination.size() <= 120
+        && data.cargoDescription is string && data.cargoDescription.size() >= 2 && data.cargoDescription.size() <= 300
+        && data.weightOrVolume is string && data.weightOrVolume.size() >= 1 && data.weightOrVolume.size() <= 80
+        && data.currentLocation is string && data.currentLocation.size() >= 2 && data.currentLocation.size() <= 150
+        && data.currentStatus is string && isValidShipmentStatus(data.currentStatus)
+        && data.estimatedArrival is string && data.estimatedArrival.size() <= 40
+        && data.updatesCount is int && data.updatesCount >= 0 && data.updatesCount <= 10000
+        && data.createdBy is string && data.createdBy.size() >= 1 && data.createdBy.size() <= 128
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidTrackingEvent(data, shipmentId) {
+      return data.keys().hasAll([
+          'shipmentId', 'clientUid', 'clientEmail', 'location',
+          'status', 'notes', 'recordedBy', 'recordedByEmail', 'createdAt'
+        ])
+        && data.keys().hasOnly([
+          'shipmentId', 'clientUid', 'clientEmail', 'location',
+          'status', 'notes', 'recordedBy', 'recordedByEmail', 'createdAt'
+        ])
+        && data.shipmentId is string && data.shipmentId == shipmentId
+        && data.shipmentId.size() >= 4 && data.shipmentId.size() <= 40
+        && data.clientUid is string && data.clientUid.size() <= 128
+        && data.clientEmail is string && data.clientEmail.size() >= 5 && data.clientEmail.size() <= 150
+        && data.location is string && data.location.size() >= 2 && data.location.size() <= 150
+        && data.status is string && isValidShipmentStatus(data.status)
+        && data.notes is string && data.notes.size() <= 500
+        && data.recordedBy is string && data.recordedBy == request.auth.uid
+        && data.recordedBy.size() >= 1 && data.recordedBy.size() <= 128
+        && data.recordedByEmail is string && data.recordedByEmail.size() >= 5 && data.recordedByEmail.size() <= 150
+        && data.createdAt is timestamp;
+    }
+
+    function isValidShipmentDocument(data, shipmentId, docId) {
+      return data.keys().hasAll([
+          'id', 'shipmentId', 'clientUid', 'clientEmail', 'docType', 'title',
+          'referenceNumber', 'fileName', 'mimeType', 'fileSize', 'fileData',
+          'externalUrl', 'visibility', 'notes', 'uploadedBy', 'uploadedByEmail',
+          'uploadedByRole', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'id', 'shipmentId', 'clientUid', 'clientEmail', 'docType', 'title',
+          'referenceNumber', 'fileName', 'mimeType', 'fileSize', 'fileData',
+          'externalUrl', 'visibility', 'notes', 'uploadedBy', 'uploadedByEmail',
+          'uploadedByRole', 'createdAt', 'updatedAt'
+        ])
+        && data.id is string && data.id == docId
+        && data.id.size() >= 4 && data.id.size() <= 64 && data.id.matches('^[a-zA-Z0-9_\\-]+$')
+        && data.shipmentId is string && data.shipmentId == shipmentId
+        && data.shipmentId.size() >= 4 && data.shipmentId.size() <= 40
+        && data.clientUid is string && data.clientUid.size() <= 128
+        && data.clientEmail is string && data.clientEmail.size() >= 5 && data.clientEmail.size() <= 150
+        && data.clientEmail == data.clientEmail.lower()
+        && data.docType is string && isValidDocType(data.docType)
+        && data.title is string && data.title.size() >= 2 && data.title.size() <= 120
+        && data.referenceNumber is string && data.referenceNumber.size() <= 60
+        && data.fileName is string && data.fileName.size() <= 160
+        && data.mimeType is string && isValidDocMimeType(data.mimeType)
+        && data.fileSize is int && data.fileSize >= 0 && data.fileSize <= 550000
+        && data.fileData is string && data.fileData.size() <= 750000
+        && (data.fileData == '' || data.fileData.matches('^data:(application/pdf|image/jpeg|image/png|image/webp);base64,.*$'))
+        && data.externalUrl is string && data.externalUrl.size() <= 500
+        && (data.externalUrl == '' || data.externalUrl.matches('^https://.*$'))
+        && (data.fileData.size() > 0 || data.externalUrl.size() > 0)
+        && data.visibility is string && isValidDocVisibility(data.visibility)
+        && data.notes is string && data.notes.size() <= 300
+        && data.uploadedBy is string && data.uploadedBy.size() >= 1 && data.uploadedBy.size() <= 128
+        && data.uploadedByEmail is string && data.uploadedByEmail.size() >= 5 && data.uploadedByEmail.size() <= 150
+        && data.uploadedByRole is string && data.uploadedByRole in ['admin', 'operator', 'client']
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidClientDocument(data, docId) {
+      return data.keys().hasAll([
+          'id', 'clientUid', 'clientEmail', 'clientName', 'shipmentId', 'trackingCode',
+          'docType', 'title', 'referenceNumber', 'fileName', 'mimeType', 'fileSize',
+          'fileData', 'externalUrl', 'visibility', 'notes', 'uploadedBy',
+          'uploadedByEmail', 'uploadedByRole', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'id', 'clientUid', 'clientEmail', 'clientName', 'shipmentId', 'trackingCode',
+          'docType', 'title', 'referenceNumber', 'fileName', 'mimeType', 'fileSize',
+          'fileData', 'externalUrl', 'visibility', 'notes', 'uploadedBy',
+          'uploadedByEmail', 'uploadedByRole', 'createdAt', 'updatedAt'
+        ])
+        && data.id is string && data.id == docId
+        && data.id.size() >= 4 && data.id.size() <= 64 && data.id.matches('^[a-zA-Z0-9_\\-]+$')
+        && data.clientUid is string && data.clientUid.size() <= 128
+        && data.clientEmail is string && data.clientEmail.size() >= 5 && data.clientEmail.size() <= 150
+        && data.clientEmail == data.clientEmail.lower()
+        && data.clientName is string && data.clientName.size() >= 2 && data.clientName.size() <= 120
+        && data.shipmentId is string && data.shipmentId.size() <= 40
+        && (data.shipmentId == '' || isValidId(data.shipmentId))
+        && data.trackingCode is string && data.trackingCode.size() <= 40
+        && data.docType is string && isValidDocType(data.docType)
+        && data.title is string && data.title.size() >= 2 && data.title.size() <= 120
+        && data.referenceNumber is string && data.referenceNumber.size() <= 60
+        && data.fileName is string && data.fileName.size() <= 160
+        && data.mimeType is string && isValidDocMimeType(data.mimeType)
+        && data.fileSize is int && data.fileSize >= 0 && data.fileSize <= 550000
+        && data.fileData is string && data.fileData.size() <= 750000
+        && (data.fileData == '' || data.fileData.matches('^data:(application/pdf|image/jpeg|image/png|image/webp);base64,.*$'))
+        && data.externalUrl is string && data.externalUrl.size() <= 500
+        && (data.externalUrl == '' || data.externalUrl.matches('^https://.*$'))
+        && (data.fileData.size() > 0 || data.externalUrl.size() > 0)
+        && data.visibility is string && isValidDocVisibility(data.visibility)
+        && data.notes is string && data.notes.size() <= 300
+        && data.uploadedBy is string && data.uploadedBy.size() >= 1 && data.uploadedBy.size() <= 128
+        && data.uploadedByEmail is string && data.uploadedByEmail.size() >= 5 && data.uploadedByEmail.size() <= 150
+        && data.uploadedByRole is string && data.uploadedByRole in ['admin', 'operator', 'client']
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidQuoteRequest(data, quoteId) {
+      return data.keys().hasAll([
+          'id', 'quoteCode', 'clientUid', 'clientEmail', 'clientName', 'company',
+          'phone', 'transportMode', 'origin', 'destination', 'message', 'status',
+          'estimatedAmount', 'adminResponse', 'createdBy', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'id', 'quoteCode', 'clientUid', 'clientEmail', 'clientName', 'company',
+          'phone', 'transportMode', 'origin', 'destination', 'message', 'status',
+          'estimatedAmount', 'adminResponse', 'createdBy', 'createdAt', 'updatedAt'
+        ])
+        && data.id is string && data.id == quoteId
+        && data.id.size() >= 4 && data.id.size() <= 64 && data.id.matches('^[a-zA-Z0-9_\\-]+$')
+        && data.quoteCode is string && data.quoteCode.size() >= 4 && data.quoteCode.size() <= 40
+        && data.quoteCode.matches('^[A-Z0-9\\-]+$')
+        && data.clientUid is string && data.clientUid.size() <= 128
+        && data.clientEmail is string && data.clientEmail.size() >= 5 && data.clientEmail.size() <= 150
+        && data.clientEmail == data.clientEmail.lower()
+        && data.clientName is string && data.clientName.size() >= 2 && data.clientName.size() <= 120
+        && data.company is string && data.company.size() <= 120
+        && data.phone is string && data.phone.size() <= 30
+        && data.transportMode is string && isValidTransportMode(data.transportMode)
+        && data.origin is string && data.origin.size() <= 120
+        && data.destination is string && data.destination.size() <= 120
+        && data.message is string && data.message.size() >= 5 && data.message.size() <= 1000
+        && data.status is string && isValidQuoteStatus(data.status)
+        && data.estimatedAmount is string && data.estimatedAmount.size() <= 80
+        && data.adminResponse is string && data.adminResponse.size() <= 600
+        && data.createdBy is string && data.createdBy.size() >= 1 && data.createdBy.size() <= 128
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidClientNotification(data, notifId) {
+      return data.keys().hasAll([
+          'id', 'clientUid', 'clientEmail', 'shipmentId', 'trackingCode',
+          'category', 'title', 'message', 'read', 'createdBy', 'createdAt'
+        ])
+        && data.keys().hasOnly([
+          'id', 'clientUid', 'clientEmail', 'shipmentId', 'trackingCode',
+          'category', 'title', 'message', 'read', 'createdBy', 'createdAt'
+        ])
+        && data.id is string && data.id == notifId
+        && data.id.size() >= 4 && data.id.size() <= 64 && data.id.matches('^[a-zA-Z0-9_\\-]+$')
+        && data.clientUid is string && data.clientUid.size() <= 128
+        && data.clientEmail is string && data.clientEmail.size() >= 5 && data.clientEmail.size() <= 150
+        && data.clientEmail == data.clientEmail.lower()
+        && data.shipmentId is string && data.shipmentId.size() <= 40
+        && data.trackingCode is string && data.trackingCode.size() <= 40
+        && data.category is string && isValidNotificationCategory(data.category)
+        && data.title is string && data.title.size() >= 2 && data.title.size() <= 140
+        && data.message is string && data.message.size() >= 2 && data.message.size() <= 400
+        && data.read is bool
+        && data.createdBy is string && data.createdBy.size() >= 1 && data.createdBy.size() <= 128
+        && data.createdAt is timestamp;
+    }
+
+    function isClientOfResource(resData) {
+      return isSignedIn() && (
+        (resData.clientUid != '' && resData.clientUid == request.auth.uid)
+        || (
+          isVerified()
+          && request.auth.token.email != null
+          && resData.clientEmail.lower() == request.auth.token.email.lower()
+        )
+      );
+    }
+
+    // -------------------------------------------------------------------------
+    // /users/{userId} — Self-Registered Client Profiles (PII protected)
+    // -------------------------------------------------------------------------
+    match /users/{userId} {
+      allow get: if isValidId(userId) && ((isSignedIn() && request.auth.uid == userId) || isAdmin());
+      allow list: if isAdmin();
+
+      allow create: if isValidId(userId)
+        && isSignedIn()
+        && request.auth.uid == userId
+        && isValidUserProfile(incoming(), userId)
+        && incoming().uid == request.auth.uid
+        && request.auth.token.email != null
+        && incoming().email.lower() == request.auth.token.email.lower()
+        && incoming().role == 'client'
+        && ('accountStatus' in incoming())
+        && incoming().accountStatus == 'pending'
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+
+      allow update: if isValidId(userId)
+        && isSignedIn()
+        && isValidUserProfile(incoming(), userId)
+        && incoming().uid == existing().uid
+        && incoming().email == existing().email
+        && incoming().role == existing().role
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && (
+          (
+            request.auth.uid == userId
+            && incoming().diff(existing()).affectedKeys().hasOnly(['fullName', 'phone', 'company', 'city', 'updatedAt'])
+          )
+          || (
+            isAdmin()
+            && incoming().diff(existing()).affectedKeys().hasOnly(['fullName', 'phone', 'company', 'city', 'accountStatus', 'updatedAt'])
+          )
+        );
+
+      allow delete: if isValidId(userId) && isAdmin();
+    }
+
+    // -------------------------------------------------------------------------
+    // /clients/{clientId} — Admin-Managed Client Directory (PII protected)
+    // -------------------------------------------------------------------------
+    match /clients/{clientId} {
+      allow get: if isValidId(clientId) && isAdmin();
+      allow list: if isAdmin();
+
+      allow create: if isValidId(clientId)
+        && isAdmin()
+        && isValidClientRecord(incoming(), clientId)
+        && incoming().createdBy == request.auth.uid
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+
+      allow update: if isValidId(clientId)
+        && isAdmin()
+        && isValidClientRecord(incoming(), clientId)
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'fullName', 'email', 'phone', 'company', 'city', 'address', 'notes', 'updatedAt'
+        ])
+        && incoming().id == existing().id
+        && incoming().createdBy == existing().createdBy
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time;
+
+      allow delete: if isValidId(clientId) && isAdmin();
+    }
+
+    // -------------------------------------------------------------------------
+    // /staffUsers/{staffId} — Data Management Users & Operators
+    // -------------------------------------------------------------------------
+    match /staffUsers/{staffId} {
+      allow get: if isValidId(staffId)
+        && (isSuperAdmin() || (hasValidAuthEmail() && staffId == emailKey()));
+
+      allow list: if isSuperAdmin();
+
+      allow create: if isValidId(staffId)
+        && isSuperAdmin()
+        && isValidStaffUser(incoming(), staffId)
+        && incoming().id == incoming().email.lower().replace('[^a-z0-9]', '_')
+        && incoming().addedBy == request.auth.uid
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+
+      allow update: if isValidId(staffId)
+        && isSuperAdmin()
+        && isValidStaffUser(incoming(), staffId)
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'fullName', 'phone', 'department', 'role', 'active', 'updatedAt'
+        ])
+        && incoming().id == existing().id
+        && incoming().email == existing().email
+        && incoming().addedBy == existing().addedBy
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time;
+
+      allow delete: if isValidId(staffId) && isSuperAdmin();
+    }
+
+    // -------------------------------------------------------------------------
+    // /admins/{adminId} — Admin Registry
+    // -------------------------------------------------------------------------
+    match /admins/{adminId} {
+      allow get: if isValidId(adminId) && (isOwner(adminId) || isSuperAdmin());
+      allow list: if isSuperAdmin();
+
+      allow create: if isValidId(adminId)
+        && isSuperAdmin()
+        && isValidAdminRecord(incoming(), adminId)
+        && incoming().createdAt == request.time;
+
+      allow update: if false;
+
+      allow delete: if isValidId(adminId) && isSuperAdmin();
+    }
+
+    // -------------------------------------------------------------------------
+    // /shipments/{shipmentId} — Tracked Cargo Shipments
+    // -------------------------------------------------------------------------
+    match /shipments/{shipmentId} {
+      allow get: if isValidId(shipmentId)
+        && (isAdmin() || isClientOfResource(existing()));
+
+      allow list: if isAdmin() || isClientOfResource(existing());
+
+      allow create: if isValidId(shipmentId)
+        && isAdmin()
+        && isValidShipment(incoming(), shipmentId)
+        && incoming().createdBy == request.auth.uid
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+
+      allow update: if isValidId(shipmentId)
+        && isAdmin()
+        && isValidShipment(incoming(), shipmentId)
+        && (
+          // Action 1: Update cargo position / status / ETA
+          (
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'currentLocation', 'currentStatus', 'estimatedArrival', 'updatesCount', 'updatedAt'
+            ])
+            && incoming().updatesCount >= existing().updatesCount
+          )
+          ||
+          // Action 2: Edit shipment metadata or client assignment
+          (
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'clientUid', 'clientEmail', 'clientName', 'transportMode',
+              'origin', 'destination', 'cargoDescription', 'weightOrVolume',
+              'estimatedArrival', 'updatedAt'
+            ])
+          )
+        )
+        && incoming().id == existing().id
+        && incoming().trackingCode == existing().trackingCode
+        && incoming().createdBy == existing().createdBy
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time;
+
+      allow delete: if isValidId(shipmentId) && isAdmin();
+
+      // -----------------------------------------------------------------------
+      // /shipments/{shipmentId}/events/{eventId} — Position History Log
+      // -----------------------------------------------------------------------
+      match /events/{eventId} {
+        allow get: if isValidId(shipmentId)
+          && isValidId(eventId)
+          && (
+            isAdmin()
+            || (
+              exists(/databases/$(database)/documents/shipments/$(shipmentId))
+              && isClientOfResource(get(/databases/$(database)/documents/shipments/$(shipmentId)).data)
+            )
+          );
+
+        allow list: if isAdmin() || isClientOfResource(existing());
+
+        allow create: if isValidId(shipmentId)
+          && isValidId(eventId)
+          && isAdmin()
+          && isValidTrackingEvent(incoming(), shipmentId)
+          && incoming().createdAt == request.time
+          && existsAfter(/databases/$(database)/documents/shipments/$(shipmentId))
+          && getAfter(/databases/$(database)/documents/shipments/$(shipmentId)).data.currentLocation == incoming().location
+          && getAfter(/databases/$(database)/documents/shipments/$(shipmentId)).data.currentStatus == incoming().status
+          && getAfter(/databases/$(database)/documents/shipments/$(shipmentId)).data.clientUid == incoming().clientUid
+          && getAfter(/databases/$(database)/documents/shipments/$(shipmentId)).data.clientEmail == incoming().clientEmail;
+
+        allow update: if isValidId(shipmentId)
+          && isValidId(eventId)
+          && isAdmin()
+          && isValidTrackingEvent(incoming(), shipmentId)
+          && incoming().diff(existing()).affectedKeys().hasOnly(['clientUid', 'clientEmail'])
+          && incoming().shipmentId == existing().shipmentId
+          && incoming().createdAt == existing().createdAt;
+
+        allow delete: if isValidId(shipmentId) && isValidId(eventId) && isAdmin();
+      }
+
+      // -----------------------------------------------------------------------
+      // /shipments/{shipmentId}/documents/{docId} — Logistics Documents (RBAC)
+      // -----------------------------------------------------------------------
+      match /documents/{docId} {
+        allow get: if isValidId(shipmentId)
+          && isValidId(docId)
+          && (
+            isAdmin()
+            || (
+              existing().visibility == 'client'
+              && isClientOfResource(existing())
+              && exists(/databases/$(database)/documents/shipments/$(shipmentId))
+              && isClientOfResource(get(/databases/$(database)/documents/shipments/$(shipmentId)).data)
+            )
+          );
+
+        allow list: if isAdmin()
+          || (
+            isSignedIn()
+            && existing().visibility == 'client'
+            && (
+              (existing().clientUid != '' && existing().clientUid == request.auth.uid)
+              || (
+                isVerified()
+                && request.auth.token.email != null
+                && existing().clientEmail == request.auth.token.email.lower()
+              )
+            )
+          );
+
+        allow create: if isValidId(shipmentId)
+          && isValidId(docId)
+          && isValidShipmentDocument(incoming(), shipmentId, docId)
+          && exists(/databases/$(database)/documents/shipments/$(shipmentId))
+          && incoming().clientUid == get(/databases/$(database)/documents/shipments/$(shipmentId)).data.clientUid
+          && incoming().clientEmail == get(/databases/$(database)/documents/shipments/$(shipmentId)).data.clientEmail.lower()
+          && incoming().uploadedBy == request.auth.uid
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time
+          && (
+            (
+              isAdmin()
+              && incoming().uploadedByRole in ['admin', 'operator']
+            )
+            || (
+              isSignedIn()
+              && isClientOfResource(get(/databases/$(database)/documents/shipments/$(shipmentId)).data)
+              && isClientUploadableDocType(incoming().docType)
+              && incoming().visibility == 'client'
+              && incoming().uploadedByRole == 'client'
+            )
+          );
+
+        allow update: if isValidId(shipmentId)
+          && isValidId(docId)
+          && isAdmin()
+          && isValidShipmentDocument(incoming(), shipmentId, docId)
+          && (
+            (
+              incoming().diff(existing()).affectedKeys().hasOnly([
+                'title', 'docType', 'referenceNumber', 'visibility', 'notes', 'updatedAt'
+              ])
+              && incoming().updatedAt == request.time
+            )
+            || incoming().diff(existing()).affectedKeys().hasOnly(['clientUid', 'clientEmail'])
+          )
+          && incoming().id == existing().id
+          && incoming().shipmentId == existing().shipmentId
+          && incoming().uploadedBy == existing().uploadedBy
+          && incoming().uploadedByEmail == existing().uploadedByEmail
+          && incoming().uploadedByRole == existing().uploadedByRole
+          && incoming().createdAt == existing().createdAt
+          && incoming().fileData == existing().fileData
+          && incoming().externalUrl == existing().externalUrl
+          && incoming().fileName == existing().fileName
+          && incoming().mimeType == existing().mimeType
+          && incoming().fileSize == existing().fileSize;
+
+        allow delete: if isValidId(shipmentId)
+          && isValidId(docId)
+          && (
+            isAdmin()
+            || (
+              isSignedIn()
+              && existing().uploadedBy == request.auth.uid
+              && existing().uploadedByRole == 'client'
+              && isClientOfResource(existing())
+            )
+          );
+      }
+    }
+
+    // -------------------------------------------------------------------------
+    // /clientDocuments/{docId} — Admin-Managed Client Documents (RBAC)
+    // -------------------------------------------------------------------------
+    match /clientDocuments/{docId} {
+      allow get: if isValidId(docId)
+        && (
+          isAdmin()
+          || (existing().visibility == 'client' && isClientOfResource(existing()))
+        );
+
+      allow list: if isAdmin()
+        || (
+          isSignedIn()
+          && existing().visibility == 'client'
+          && (
+            (existing().clientUid != '' && existing().clientUid == request.auth.uid)
+            || (
+              isVerified()
+              && request.auth.token.email != null
+              && existing().clientEmail == request.auth.token.email.lower()
+            )
+          )
+        );
+
+      allow create: if isValidId(docId)
+        && isAdmin()
+        && isValidClientDocument(incoming(), docId)
+        && incoming().uploadedBy == request.auth.uid
+        && incoming().uploadedByRole in ['admin', 'operator']
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time
+        && (
+          incoming().shipmentId == ''
+          || exists(/databases/$(database)/documents/shipments/$(incoming().shipmentId))
+        );
+
+      allow update: if isValidId(docId)
+        && isAdmin()
+        && isValidClientDocument(incoming(), docId)
+        && (
+          (
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'title', 'docType', 'referenceNumber', 'visibility', 'notes', 'updatedAt'
+            ])
+            && incoming().updatedAt == request.time
+          )
+          || (
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'clientUid', 'clientEmail', 'clientName', 'updatedAt'
+            ])
+            && incoming().updatedAt == request.time
+          )
+        )
+        && incoming().id == existing().id
+        && incoming().shipmentId == existing().shipmentId
+        && incoming().trackingCode == existing().trackingCode
+        && incoming().uploadedBy == existing().uploadedBy
+        && incoming().uploadedByEmail == existing().uploadedByEmail
+        && incoming().uploadedByRole == existing().uploadedByRole
+        && incoming().createdAt == existing().createdAt
+        && incoming().fileData == existing().fileData
+        && incoming().externalUrl == existing().externalUrl
+        && incoming().fileName == existing().fileName
+        && incoming().mimeType == existing().mimeType
+        && incoming().fileSize == existing().fileSize;
+
+      allow delete: if isValidId(docId) && isAdmin();
+    }
+
+    // -------------------------------------------------------------------------
+    // /quoteRequests/{quoteId} — Client Quote Requests & Commercial Responses
+    // -------------------------------------------------------------------------
+    match /quoteRequests/{quoteId} {
+      allow get: if isValidId(quoteId)
+        && (isAdmin() || isClientOfResource(existing()));
+
+      allow list: if isAdmin()
+        || (
+          isSignedIn()
+          && (
+            (existing().clientUid != '' && existing().clientUid == request.auth.uid)
+            || (
+              isVerified()
+              && request.auth.token.email != null
+              && existing().clientEmail == request.auth.token.email.lower()
+            )
+          )
+        );
+
+      allow create: if isValidId(quoteId)
+        && isValidQuoteRequest(incoming(), quoteId)
+        && incoming().createdBy == request.auth.uid
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time
+        && (
+          isAdmin()
+          || (
+            isSignedIn()
+            && request.auth.token.email != null
+            && incoming().clientUid == request.auth.uid
+            && incoming().clientEmail == request.auth.token.email.lower()
+            && incoming().status == 'En attente'
+            && incoming().estimatedAmount == ''
+            && incoming().adminResponse == ''
+          )
+        );
+
+      allow update: if isValidId(quoteId)
+        && isValidQuoteRequest(incoming(), quoteId)
+        && incoming().id == existing().id
+        && incoming().quoteCode == existing().quoteCode
+        && incoming().createdBy == existing().createdBy
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && (
+          (
+            isAdmin()
+            && incoming().diff(existing()).affectedKeys().hasOnly([
+              'status', 'estimatedAmount', 'adminResponse', 'clientUid', 'updatedAt'
+            ])
+          )
+          || (
+            isClientOfResource(existing())
+            && existing().status == 'Devis envoyé'
+            && incoming().status == 'Acceptée'
+            && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt'])
+          )
+        );
+
+      allow delete: if isValidId(quoteId) && isAdmin();
+    }
+
+    // -------------------------------------------------------------------------
+    // /notifications/{notifId} — Client Shipment & Document Notifications
+    // -------------------------------------------------------------------------
+    match /notifications/{notifId} {
+      allow get: if isValidId(notifId)
+        && (isAdmin() || isClientOfResource(existing()));
+
+      allow list: if isAdmin()
+        || (
+          isSignedIn()
+          && (
+            (existing().clientUid != '' && existing().clientUid == request.auth.uid)
+            || (
+              isVerified()
+              && request.auth.token.email != null
+              && existing().clientEmail == request.auth.token.email.lower()
+            )
+          )
+        );
+
+      allow create: if isValidId(notifId)
+        && isAdmin()
+        && isValidClientNotification(incoming(), notifId)
+        && incoming().createdBy == request.auth.uid
+        && incoming().read == false
+        && incoming().createdAt == request.time;
+
+      allow update: if isValidId(notifId)
+        && isValidClientNotification(incoming(), notifId)
+        && incoming().id == existing().id
+        && incoming().createdBy == existing().createdBy
+        && incoming().createdAt == existing().createdAt
+        && (
+          (
+            isClientOfResource(existing())
+            && incoming().diff(existing()).affectedKeys().hasOnly(['read'])
+          )
+          || (
+            isAdmin()
+            && incoming().diff(existing()).affectedKeys().hasOnly(['clientUid', 'clientEmail'])
+          )
+        );
+
+      allow delete: if isValidId(notifId)
+        && (isAdmin() || isClientOfResource(existing()));
+    }
+  }
+}

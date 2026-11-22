@@ -1,0 +1,6 @@
+{
+  "name": "Alpha Logistix Group",
+  "description": "Site officiel d'Alpha Logistix Group — Transport international, transit douanier, fret maritime, aérien, corridors routiers et entreposage en Afrique de l'Ouest.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

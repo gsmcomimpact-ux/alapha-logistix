@@ -1,0 +1,895 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Profil client enregistré via e-mail/mot de passe ou Google sur la plateforme Alpha Logistix Group.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "fullName": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 100
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "minLength": 5,
+          "maxLength": 150
+        },
+        "phone": {
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 30
+        },
+        "company": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "city": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 80
+        },
+        "role": {
+          "type": "string",
+          "enum": ["client"]
+        },
+        "accountStatus": {
+          "type": "string",
+          "enum": ["pending", "validated", "rejected"]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["uid", "fullName", "email", "phone", "company", "city", "role", "createdAt", "updatedAt"]
+    },
+    "ClientRecord": {
+      "title": "ClientRecord",
+      "description": "Dossier client créé et géré depuis la console d'administration.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 64,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "fullName": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 100
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "minLength": 5,
+          "maxLength": 150
+        },
+        "phone": {
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 30
+        },
+        "company": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "city": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 80
+        },
+        "address": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "notes": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "createdBy": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "fullName",
+        "email",
+        "phone",
+        "company",
+        "city",
+        "address",
+        "notes",
+        "createdBy",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "StaffUser": {
+      "title": "StaffUser",
+      "description": "Utilisateur habilité pour la gestion des données (clients, expéditions, tracking).",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "fullName": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 100
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "minLength": 5,
+          "maxLength": 120
+        },
+        "phone": {
+          "type": "string",
+          "maxLength": 30
+        },
+        "department": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 80
+        },
+        "role": {
+          "type": "string",
+          "enum": ["admin", "operator"]
+        },
+        "active": {
+          "type": "boolean"
+        },
+        "addedBy": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "fullName",
+        "email",
+        "phone",
+        "department",
+        "role",
+        "active",
+        "addedBy",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "AdminRecord": {
+      "title": "AdminRecord",
+      "description": "Enregistrement d'un administrateur habilité à gérer le tracking.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "minLength": 5,
+          "maxLength": 150
+        },
+        "addedBy": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["uid", "email", "addedBy", "createdAt"]
+    },
+    "Shipment": {
+      "title": "Shipment",
+      "description": "Expédition suivie avec position actuelle et affectation client.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 40,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "trackingCode": {
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 40,
+          "pattern": "^[A-Z0-9\\-]+$"
+        },
+        "clientUid": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "clientEmail": {
+          "type": "string",
+          "minLength": 5,
+          "maxLength": 150
+        },
+        "clientName": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 120
+        },
+        "transportMode": {
+          "type": "string",
+          "enum": ["Fret maritime", "Fret aérien", "Corridor routier", "Dédouanement & Entreposage"]
+        },
+        "origin": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 120
+        },
+        "destination": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 120
+        },
+        "cargoDescription": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 300
+        },
+        "weightOrVolume": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "currentLocation": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 150
+        },
+        "currentStatus": {
+          "type": "string",
+          "enum": [
+            "Pris en charge",
+            "En transit maritime",
+            "En transit aérien",
+            "Arrivé au port / hub",
+            "En dédouanement",
+            "En route corridor",
+            "Livré"
+          ]
+        },
+        "estimatedArrival": {
+          "type": "string",
+          "maxLength": 40
+        },
+        "updatesCount": {
+          "type": "integer"
+        },
+        "createdBy": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "trackingCode",
+        "clientUid",
+        "clientEmail",
+        "clientName",
+        "transportMode",
+        "origin",
+        "destination",
+        "cargoDescription",
+        "weightOrVolume",
+        "currentLocation",
+        "currentStatus",
+        "estimatedArrival",
+        "updatesCount",
+        "createdBy",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "TrackingEvent": {
+      "title": "TrackingEvent",
+      "description": "Étape historique de localisation et de statut d'une marchandise.",
+      "type": "object",
+      "properties": {
+        "shipmentId": {
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 40,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "clientUid": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "clientEmail": {
+          "type": "string",
+          "minLength": 5,
+          "maxLength": 150
+        },
+        "location": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 150
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "Pris en charge",
+            "En transit maritime",
+            "En transit aérien",
+            "Arrivé au port / hub",
+            "En dédouanement",
+            "En route corridor",
+            "Livré"
+          ]
+        },
+        "notes": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "recordedBy": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "recordedByEmail": {
+          "type": "string",
+          "minLength": 5,
+          "maxLength": 150
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "shipmentId",
+        "clientUid",
+        "clientEmail",
+        "location",
+        "status",
+        "notes",
+        "recordedBy",
+        "recordedByEmail",
+        "createdAt"
+      ]
+    },
+    "ShipmentDocument": {
+      "title": "ShipmentDocument",
+      "description": "Document logistique sécurisé rattaché à une expédition (B/L, AWB, packing list, facture commerciale, douane, preuve de livraison).",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 64,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "shipmentId": {
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 40,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "clientUid": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "clientEmail": {
+          "type": "string",
+          "format": "email",
+          "minLength": 5,
+          "maxLength": 150
+        },
+        "docType": {
+          "type": "string",
+          "enum": [
+            "Bill of Lading",
+            "Air Waybill",
+            "Packing list",
+            "Facture commerciale",
+            "Documents douaniers",
+            "Preuve de livraison"
+          ]
+        },
+        "title": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 120
+        },
+        "referenceNumber": {
+          "type": "string",
+          "maxLength": 60
+        },
+        "fileName": {
+          "type": "string",
+          "maxLength": 160
+        },
+        "mimeType": {
+          "type": "string",
+          "enum": [
+            "application/pdf",
+            "image/jpeg",
+            "image/png",
+            "image/webp",
+            "text/url"
+          ]
+        },
+        "fileSize": {
+          "type": "integer"
+        },
+        "fileData": {
+          "type": "string",
+          "maxLength": 750000
+        },
+        "externalUrl": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "visibility": {
+          "type": "string",
+          "enum": ["client", "internal"]
+        },
+        "notes": {
+          "type": "string",
+          "maxLength": 300
+        },
+        "uploadedBy": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "uploadedByEmail": {
+          "type": "string",
+          "format": "email",
+          "minLength": 5,
+          "maxLength": 150
+        },
+        "uploadedByRole": {
+          "type": "string",
+          "enum": ["admin", "operator", "client"]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "shipmentId",
+        "clientUid",
+        "clientEmail",
+        "docType",
+        "title",
+        "referenceNumber",
+        "fileName",
+        "mimeType",
+        "fileSize",
+        "fileData",
+        "externalUrl",
+        "visibility",
+        "notes",
+        "uploadedBy",
+        "uploadedByEmail",
+        "uploadedByRole",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "ClientDocument": {
+      "title": "ClientDocument",
+      "description": "Document logistique ou administratif déposé directement pour un client depuis l'administration (optionnellement lié à un dossier d'expédition).",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 64,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "clientUid": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "clientEmail": {
+          "type": "string",
+          "format": "email",
+          "minLength": 5,
+          "maxLength": 150
+        },
+        "clientName": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 120
+        },
+        "shipmentId": {
+          "type": "string",
+          "maxLength": 40
+        },
+        "trackingCode": {
+          "type": "string",
+          "maxLength": 40
+        },
+        "docType": {
+          "type": "string",
+          "enum": [
+            "Bill of Lading",
+            "Air Waybill",
+            "Packing list",
+            "Facture commerciale",
+            "Documents douaniers",
+            "Preuve de livraison"
+          ]
+        },
+        "title": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 120
+        },
+        "referenceNumber": {
+          "type": "string",
+          "maxLength": 60
+        },
+        "fileName": {
+          "type": "string",
+          "maxLength": 160
+        },
+        "mimeType": {
+          "type": "string",
+          "enum": [
+            "application/pdf",
+            "image/jpeg",
+            "image/png",
+            "image/webp",
+            "text/url"
+          ]
+        },
+        "fileSize": {
+          "type": "integer"
+        },
+        "fileData": {
+          "type": "string",
+          "maxLength": 750000
+        },
+        "externalUrl": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "visibility": {
+          "type": "string",
+          "enum": ["client", "internal"]
+        },
+        "notes": {
+          "type": "string",
+          "maxLength": 300
+        },
+        "uploadedBy": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "uploadedByEmail": {
+          "type": "string",
+          "format": "email",
+          "minLength": 5,
+          "maxLength": 150
+        },
+        "uploadedByRole": {
+          "type": "string",
+          "enum": ["admin", "operator", "client"]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "clientUid",
+        "clientEmail",
+        "clientName",
+        "shipmentId",
+        "trackingCode",
+        "docType",
+        "title",
+        "referenceNumber",
+        "fileName",
+        "mimeType",
+        "fileSize",
+        "fileData",
+        "externalUrl",
+        "visibility",
+        "notes",
+        "uploadedBy",
+        "uploadedByEmail",
+        "uploadedByRole",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "QuoteRequest": {
+      "title": "QuoteRequest",
+      "description": "Demande de cotation soumise par un client et suivie par le service commercial.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 64,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "quoteCode": {
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 40,
+          "pattern": "^[A-Z0-9\\-]+$"
+        },
+        "clientUid": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "clientEmail": {
+          "type": "string",
+          "format": "email",
+          "minLength": 5,
+          "maxLength": 150
+        },
+        "clientName": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 120
+        },
+        "company": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "phone": {
+          "type": "string",
+          "maxLength": 30
+        },
+        "transportMode": {
+          "type": "string",
+          "enum": [
+            "Fret maritime",
+            "Fret aérien",
+            "Corridor routier",
+            "Dédouanement & Entreposage"
+          ]
+        },
+        "origin": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "destination": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "message": {
+          "type": "string",
+          "minLength": 5,
+          "maxLength": 1000
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "En attente",
+            "À l'étude",
+            "Devis envoyé",
+            "Acceptée",
+            "Archivée"
+          ]
+        },
+        "estimatedAmount": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "adminResponse": {
+          "type": "string",
+          "maxLength": 600
+        },
+        "createdBy": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "quoteCode",
+        "clientUid",
+        "clientEmail",
+        "clientName",
+        "company",
+        "phone",
+        "transportMode",
+        "origin",
+        "destination",
+        "message",
+        "status",
+        "estimatedAmount",
+        "adminResponse",
+        "createdBy",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "ClientNotification": {
+      "title": "ClientNotification",
+      "description": "Notification relative aux expéditions, documents et cotations d'un client.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 64,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "clientUid": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "clientEmail": {
+          "type": "string",
+          "format": "email",
+          "minLength": 5,
+          "maxLength": 150
+        },
+        "shipmentId": {
+          "type": "string",
+          "maxLength": 40
+        },
+        "trackingCode": {
+          "type": "string",
+          "maxLength": 40
+        },
+        "category": {
+          "type": "string",
+          "enum": ["position", "document", "status", "quote"]
+        },
+        "title": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 140
+        },
+        "message": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 400
+        },
+        "read": {
+          "type": "boolean"
+        },
+        "createdBy": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "clientUid",
+        "clientEmail",
+        "shipmentId",
+        "trackingCode",
+        "category",
+        "title",
+        "message",
+        "read",
+        "createdBy",
+        "createdAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Comptes clients enregistrés (PII protégée)."
+    },
+    "/clients/{clientId}": {
+      "schema": { "$ref": "#/entities/ClientRecord" },
+      "description": "Dossiers clients créés et gérés par l'administration."
+    },
+    "/staffUsers/{staffId}": {
+      "schema": { "$ref": "#/entities/StaffUser" },
+      "description": "Utilisateurs habilités à la gestion des données (clients, tracking)."
+    },
+    "/admins/{adminId}": {
+      "schema": { "$ref": "#/entities/AdminRecord" },
+      "description": "Administrateurs habilités pour la gestion du tracking."
+    },
+    "/shipments/{shipmentId}": {
+      "schema": { "$ref": "#/entities/Shipment" },
+      "description": "Expéditions actives et archivées avec position actuelle."
+    },
+    "/shipments/{shipmentId}/events/{eventId}": {
+      "schema": { "$ref": "#/entities/TrackingEvent" },
+      "description": "Journal chronologique des positions de la marchandise."
+    },
+    "/shipments/{shipmentId}/documents/{docId}": {
+      "schema": { "$ref": "#/entities/ShipmentDocument" },
+      "description": "Documents logistiques sécurisés liés à chaque expédition."
+    },
+    "/clientDocuments/{docId}": {
+      "schema": { "$ref": "#/entities/ClientDocument" },
+      "description": "Documents logistiques et administratifs associés directement à un client."
+    },
+    "/quoteRequests/{quoteId}": {
+      "schema": { "$ref": "#/entities/QuoteRequest" },
+      "description": "Demandes de cotation et propositions commerciales associées."
+    },
+    "/notifications/{notifId}": {
+      "schema": { "$ref": "#/entities/ClientNotification" },
+      "description": "Notifications en temps réel relatives aux expéditions et documents clients."
+    }
+  }
+}
