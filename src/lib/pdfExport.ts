@@ -191,7 +191,7 @@ function drawPageFooters(doc: jsPDF) {
     doc.setFontSize(8);
     doc.setTextColor(100, 116, 139);
     doc.text(
-      'Alpha Logistix Group — www.alphalogistixgroup.com',
+      'Alpha Logistix Group — alphalogistixgroup.com',
       14,
       pageHeight - 8
     );

@@ -337,7 +337,7 @@ export function ContactSection({ prefill, onClearPrefill }: ContactSectionProps)
                 <div>
                   <p className="text-xs font-medium text-slate-500">{t.contact.portalLabel}</p>
                   <p className="mt-0.5 font-mono text-sm font-semibold text-slate-900">
-                    www.alphalogistixgroup.com
+                    alphalogistixgroup.com
                   </p>
                   <p className="mt-1 text-xs text-slate-500">{t.contact.portalLocations}</p>
                 </div>

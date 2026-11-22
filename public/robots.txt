@@ -3,4 +3,4 @@ Allow: /
 Disallow: /fr/administration
 Disallow: /en/administration
 
-Sitemap: https://www.alphalogistixgroup.com/sitemap.xml
+Sitemap: https://alphalogistixgroup.com/sitemap.xml

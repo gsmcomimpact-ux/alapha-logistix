@@ -25,7 +25,7 @@ export function HeroSection({ onEstimateClick }: HeroSectionProps) {
           <div className="lg:col-span-6 flex flex-col justify-between py-2">
             <div>
               <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-slate-500">
-                <span className="font-mono text-slate-700">www.alphalogistixgroup.com</span>
+                <span className="font-mono text-slate-700">alphalogistixgroup.com</span>
                 <span aria-hidden="true">·</span>
                 <span>{t.hero.eyebrow}</span>
               </div>

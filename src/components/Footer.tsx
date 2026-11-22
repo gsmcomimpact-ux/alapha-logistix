@@ -36,7 +36,7 @@ export function Footer() {
               {t.common.brandName}
             </p>
             <p className="mt-1.5 text-xs text-slate-400">
-              www.alphalogistixgroup.com ·{' '}
+              alphalogistixgroup.com ·{' '}
               <a href="tel:+22789994453" className="hover:text-white transition-colors">
                 +227 89 99 44 53
               </a>{' '}
